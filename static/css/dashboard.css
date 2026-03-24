@@ -203,8 +203,13 @@
     position: fixed;
     inset: 0;
     z-index: 35;
+    display: none;
     background: rgba(8, 15, 31, 0.44);
     backdrop-filter: blur(6px);
+}
+
+.workspace-backdrop[hidden] {
+    display: none !important;
 }
 
 .workspace-rail,
@@ -1042,10 +1047,6 @@
         grid-template-columns: 1fr;
         gap: 20px;
         padding: 16px;
-    }
-
-    .workspace-backdrop {
-        display: block;
     }
 
     .workspace-rail {
