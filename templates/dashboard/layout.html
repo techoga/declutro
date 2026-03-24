@@ -15,16 +15,16 @@
 {% block body_class %}app-body dashboard-body{% endblock %}
 
 {% block body %}
-<div class="workspace-shell" data-dashboard-shell>
+<div class="workspace-shell workspace-shell-{{ page_variant }}" data-dashboard-shell>
     <div class="workspace-backdrop" data-dashboard-nav-backdrop hidden></div>
 
-    <aside class="workspace-rail" id="dashboard-nav-panel" data-dashboard-nav-panel aria-label="Dashboard navigation">
+    <section class="workspace-rail workspace-rail-{{ page_variant }}" id="dashboard-nav-panel" data-dashboard-nav-panel aria-label="Dashboard navigation">
         <div class="workspace-rail-header">
             <a href="{% url 'home' %}" class="workspace-brand">
                 <span class="workspace-brand-mark"></span>
                 <span class="workspace-brand-copy">
                     <span class="workspace-brand-overline">Declutro</span>
-                    <span class="workspace-brand-name">Control room</span>
+                    <span class="workspace-brand-name">Workspace</span>
                 </span>
             </a>
             <button
@@ -39,63 +39,69 @@
         </div>
 
         <div class="workspace-rail-body">
-            <section class="workspace-owner-card">
-                <div class="workspace-owner-top">
-                    <span class="workspace-owner-avatar">{{ request.user.initials }}</span>
-                    <div>
-                        <p class="workspace-label">Control room</p>
-                        <h2>{{ request.user.display_name }}</h2>
-                    </div>
-                </div>
-                <p>Run inventory, offers, payments, and meetups from one tighter operating view.</p>
-                <div class="workspace-owner-stats" aria-label="Workspace snapshot">
-                    <article>
-                        <strong>{{ open_transactions_total }}</strong>
-                        <span>live deals</span>
-                    </article>
-                    <article>
-                        <strong>{{ action_items|length }}</strong>
-                        <span>in queue</span>
-                    </article>
-                </div>
-            </section>
+            <div class="workspace-rail-primary">
+                <nav class="workspace-nav" aria-label="Primary">
+                    {% for item in dashboard_nav_items %}
+                        <a href="{{ item.href }}" class="workspace-nav-link{% if item.is_active %} is-active{% endif %}">
+                            <span class="workspace-nav-icon" aria-hidden="true">
+                                {% include "dashboard/partials/nav_icon.html" with icon=item.icon %}
+                            </span>
+                            <span>{{ item.label }}</span>
+                        </a>
+                    {% endfor %}
+                </nav>
 
-            <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary workspace-primary-cta">Sell Item</a>
+                <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary workspace-primary-cta">Sell Item</a>
+            </div>
 
-            <nav class="workspace-nav" aria-label="Primary">
-                {% for item in dashboard_nav_items %}
-                    <a href="{{ item.href }}" class="workspace-nav-link{% if item.is_active %} is-active{% endif %}">
-                        <span class="workspace-nav-icon" aria-hidden="true">
-                            {% include "dashboard/partials/nav_icon.html" with icon=item.icon %}
-                        </span>
-                        <span>{{ item.label }}</span>
-                    </a>
-                {% endfor %}
-            </nav>
+            {% if page_variant == "overview" %}
+                <div class="workspace-rail-secondary">
+                    <section class="workspace-owner-card">
+                        <div class="workspace-owner-top">
+                            <span class="workspace-owner-avatar">{{ request.user.initials }}</span>
+                            <div>
+                                <p class="workspace-label">Control room</p>
+                                <h2>{{ request.user.display_name }}</h2>
+                            </div>
+                        </div>
+                        <p>Run inventory, offers, payments, and meetups from one lighter, calmer operating surface.</p>
+                        <div class="workspace-owner-stats" aria-label="Workspace snapshot">
+                            <article>
+                                <strong>{{ open_transactions_total }}</strong>
+                                <span>live deals</span>
+                            </article>
+                            <article>
+                                <strong>{{ action_items|length }}</strong>
+                                <span>in queue</span>
+                            </article>
+                        </div>
+                    </section>
 
-            <section class="workspace-rail-panel">
-                <div>
-                    <p class="workspace-label">Live signal</p>
-                    <h3>Stay ahead of drift</h3>
+                    <section class="workspace-rail-panel">
+                        <div>
+                            <p class="workspace-label">Live signal</p>
+                            <h3>Stay ahead of drift</h3>
+                        </div>
+                        <div class="workspace-rail-kpis">
+                            <article>
+                                <span>Inventory</span>
+                                <strong>{{ listings_total }}</strong>
+                            </article>
+                            <article>
+                                <span>Closed</span>
+                                <strong>{{ closed_transactions_total }}</strong>
+                            </article>
+                        </div>
+                        {% if using_demo_data %}
+                            <p class="workspace-rail-panel-copy">Preview data stays visible until your first live listings and transactions start flowing.</p>
+                        {% else %}
+                            <p class="workspace-rail-panel-copy">Deals, inventory, and trust states stay readable without stealing space from the page itself.</p>
+                        {% endif %}
+                    </section>
                 </div>
-                <div class="workspace-rail-kpis">
-                    <article>
-                        <span>Inventory</span>
-                        <strong>{{ listings_total }}</strong>
-                    </article>
-                    <article>
-                        <span>Closed</span>
-                        <strong>{{ closed_transactions_total }}</strong>
-                    </article>
-                </div>
-                {% if using_demo_data %}
-                    <p class="workspace-rail-panel-copy">Preview data stays visible until your first live listings and transactions start flowing.</p>
-                {% else %}
-                    <p class="workspace-rail-panel-copy">Deals, inventory, and trust states stay readable without wasting horizontal space.</p>
-                {% endif %}
-            </section>
+            {% endif %}
         </div>
-    </aside>
+    </section>
 
     <div class="workspace-main-shell">
         <header class="workspace-toolbar">
@@ -120,11 +126,13 @@
             </div>
 
             <div class="workspace-toolbar-actions">
-                <div class="workspace-toolbar-meta" aria-label="Workspace summary">
-                    <span class="workspace-toolbar-chip workspace-toolbar-chip-emphasis">{{ action_items|length }} in queue</span>
-                    <span class="workspace-toolbar-chip">{{ open_transactions_total }} live deals</span>
-                    <span class="workspace-toolbar-chip">{{ listings_total }} listings</span>
-                </div>
+                {% if page_variant != "form" %}
+                    <div class="workspace-toolbar-meta" aria-label="Workspace summary">
+                        <span class="workspace-toolbar-chip workspace-toolbar-chip-emphasis">{{ action_items|length }} in queue</span>
+                        <span class="workspace-toolbar-chip">{{ open_transactions_total }} live deals</span>
+                        <span class="workspace-toolbar-chip">{{ listings_total }} listings</span>
+                    </div>
+                {% endif %}
                 <div class="dropdown" data-dropdown>
                     <button type="button" class="avatar-button workspace-account-trigger" data-dropdown-trigger aria-expanded="false">
                         <span class="avatar-circle">{{ request.user.initials }}</span>

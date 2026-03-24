@@ -3,50 +3,50 @@
 {% block dashboard_content %}
     {% include "dashboard/partials/page_header.html" %}
 
-    <div class="dashboard-form-shell">
-        <section class="dashboard-form-card">
-            <form method="post" novalidate data-loading-form class="dashboard-form">
-                {% csrf_token %}
-                {% if form.non_field_errors %}
-                    <div class="alert alert-error">
-                        {% for error in form.non_field_errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
-                <section class="dashboard-form-section">
-                    <div class="dashboard-section-intro">
-                        <p class="workspace-label">Identity</p>
-                        <h2>Personal details</h2>
-                        <p>These details shape how buyers, sellers, and support verify who is on the other side of a deal.</p>
-                    </div>
-                    <div class="dashboard-field-grid dashboard-field-grid-two">
-                        {% include "includes/form_field.html" with field=form.name %}
-                        {% include "includes/form_field.html" with field=form.email %}
-                        {% include "includes/form_field.html" with field=form.phone_number %}
-                        {% include "includes/form_field.html" with field=form.current_password %}
-                    </div>
-                </section>
-
-                <div class="dashboard-form-actions">
-                    <a href="{% url 'dashboard_home' %}" class="btn btn-ghost">Back</a>
-                    <button type="submit" class="btn btn-primary" data-submit-button>
-                        <span class="button-label">Save changes</span>
-                    </button>
+    <section class="dashboard-form-card dashboard-form-card-single">
+        <form method="post" novalidate data-loading-form class="dashboard-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
                 </div>
-            </form>
-        </section>
+            {% endif %}
 
-        <aside class="dashboard-side-panel">
-            <p class="workspace-label">Trust and recovery</p>
-            <h2>Keep access reliable</h2>
-            <p>A working phone number and recovery email reduce payout friction and make account recovery much faster.</p>
-            <div class="dashboard-side-points">
-                <span>Phone changes require your current password.</span>
-                <span>Use an email you actively monitor for reset and support flows.</span>
-                <span>Accurate identity details improve transaction confidence.</span>
+            <section class="dashboard-form-section">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Identity</p>
+                    <h2>Personal details</h2>
+                    <p>These details shape how buyers, sellers, and support verify who is on the other side of a deal.</p>
+                </div>
+                <div class="dashboard-field-grid dashboard-field-grid-two">
+                    {% include "includes/form_field.html" with field=form.name %}
+                    {% include "includes/form_field.html" with field=form.email %}
+                    {% include "includes/form_field.html" with field=form.phone_number %}
+                    {% include "includes/form_field.html" with field=form.current_password %}
+                </div>
+            </section>
+
+            <section class="dashboard-form-section dashboard-form-section-support">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Trust and recovery</p>
+                    <h2>Keep access reliable</h2>
+                    <p>A working phone number and recovery email reduce payout friction and make account recovery much faster.</p>
+                </div>
+                <div class="dashboard-side-points">
+                    <span>Phone changes require your current password.</span>
+                    <span>Use an email you actively monitor for reset and support flows.</span>
+                    <span>Accurate identity details improve transaction confidence.</span>
+                </div>
+            </section>
+
+            <div class="dashboard-form-actions">
+                <a href="{% url 'dashboard_home' %}" class="btn btn-ghost">Back</a>
+                <button type="submit" class="btn btn-primary" data-submit-button>
+                    <span class="button-label">Save changes</span>
+                </button>
             </div>
-        </aside>
-    </div>
+        </form>
+    </section>
 {% endblock %}
