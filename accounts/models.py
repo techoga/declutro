@@ -1,4 +1,6 @@
 from datetime import timedelta
+from pathlib import Path
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
@@ -8,6 +10,20 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .utils import normalize_email_address, normalize_phone_number
+
+
+def _listing_upload_path(prefix, filename):
+    extension = Path(filename or "").suffix.lower()
+    return f"listings/{prefix}/{uuid4().hex}{extension}"
+
+
+def listing_primary_image_upload_to(instance, filename):
+    return _listing_upload_path("primary", filename)
+
+
+def listing_media_upload_to(instance, filename):
+    folder = "videos" if instance.asset_type == ListingMedia.AssetType.VIDEO else "gallery"
+    return _listing_upload_path(folder, filename)
 
 
 class UserManager(BaseUserManager):
@@ -134,6 +150,7 @@ class Listing(models.Model):
     condition = models.CharField(max_length=32, choices=Condition.choices, default=Condition.USED_GOOD)
     location = models.CharField(max_length=120, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2)
+    primary_image = models.FileField(upload_to=listing_primary_image_upload_to, blank=True)
     image_url = models.CharField(max_length=500, blank=True)
     gallery_image_urls = models.TextField(blank=True)
     defects = models.TextField(blank=True)
@@ -152,8 +169,15 @@ class Listing(models.Model):
     @property
     def image_gallery(self):
         urls = []
-        if self.image_url:
+        if self.primary_image:
+            urls.append(self.primary_image.url)
+        elif self.image_url:
             urls.append(self.image_url.strip())
+        if self.pk:
+            for asset in self.media_assets.filter(asset_type=ListingMedia.AssetType.IMAGE).order_by("position", "pk"):
+                asset_url = asset.file.url if asset.file else ""
+                if asset_url and asset_url not in urls:
+                    urls.append(asset_url)
         for value in self.gallery_image_urls.splitlines():
             normalized = value.strip()
             if normalized and normalized not in urls:
@@ -166,8 +190,37 @@ class Listing(models.Model):
         return gallery[0] if gallery else ""
 
     @property
+    def video_gallery(self):
+        if not self.pk:
+            return []
+        urls = []
+        for asset in self.media_assets.filter(asset_type=ListingMedia.AssetType.VIDEO).order_by("position", "pk"):
+            asset_url = asset.file.url if asset.file else ""
+            if asset_url and asset_url not in urls:
+                urls.append(asset_url)
+        return urls
+
+    @property
     def is_new_arrival(self):
         return self.created_at >= timezone.now() - timedelta(days=5)
+
+
+class ListingMedia(models.Model):
+    class AssetType(models.TextChoices):
+        IMAGE = "image", "Image"
+        VIDEO = "video", "Video"
+
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="media_assets")
+    asset_type = models.CharField(max_length=16, choices=AssetType.choices)
+    file = models.FileField(upload_to=listing_media_upload_to)
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["position", "created_at", "pk"]
+
+    def __str__(self):
+        return f"{self.listing.title} {self.asset_type}"
 
 
 class Offer(models.Model):

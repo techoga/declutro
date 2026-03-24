@@ -637,13 +637,72 @@ def _seller_is_verified(seller):
     return bool(seller.is_identity_verified or seller.is_email_verified)
 
 
-def _listing_image_gallery(listing):
-    gallery = list(listing.image_gallery)
-    if not gallery:
-        gallery = [_placeholder_image(listing.title)]
-    while len(gallery) < 3:
-        gallery.append(gallery[-1])
-    return gallery
+def _listing_form_preview(listing=None):
+    if not listing:
+        return {
+            "cover_url": "",
+            "gallery_items": [],
+            "video_items": [],
+        }
+
+    image_gallery = list(listing.image_gallery)
+    return {
+        "cover_url": image_gallery[0] if image_gallery else "",
+        "gallery_items": [
+            {
+                "url": url,
+                "label": f"Gallery image {index}",
+            }
+            for index, url in enumerate(image_gallery[1:], start=1)
+        ],
+        "video_items": [
+            {
+                "url": url,
+                "label": f"Product video {index}",
+            }
+            for index, url in enumerate(listing.video_gallery, start=1)
+        ],
+    }
+ 
+
+def _listing_media_gallery(listing):
+    image_urls = list(listing.image_gallery)
+    video_urls = list(listing.video_gallery)
+
+    media_items = [
+        {
+            "kind": "image",
+            "url": url,
+            "poster_url": url,
+            "thumb_url": url,
+            "label": f"{listing.title} image {index}",
+        }
+        for index, url in enumerate(image_urls, start=1)
+    ]
+    media_items.extend(
+        {
+            "kind": "video",
+            "url": url,
+            "poster_url": image_urls[0] if image_urls else "",
+            "thumb_url": image_urls[0] if image_urls else "",
+            "label": f"{listing.title} video {index}",
+        }
+        for index, url in enumerate(video_urls, start=1)
+    )
+
+    if not media_items:
+        fallback_url = _placeholder_image(listing.title)
+        media_items.append(
+            {
+                "kind": "image",
+                "url": fallback_url,
+                "poster_url": fallback_url,
+                "thumb_url": fallback_url,
+                "label": f"{listing.title} image 1",
+            }
+        )
+
+    return media_items
 
 
 def _serialize_public_listing(listing):
@@ -665,7 +724,7 @@ def _serialize_public_listing(listing):
 
 def _build_listing_detail_context(request, listing, offer_form=None, offer_modal_open=False):
     detail_url = reverse("listing_detail", kwargs={"listing_id": listing.pk})
-    gallery = _listing_image_gallery(listing)
+    media_gallery = _listing_media_gallery(listing)
     is_owner = request.user.is_authenticated and request.user.pk == listing.seller_id
     offer_form = offer_form or OfferSubmissionForm(listing, initial={"amount": listing.price})
 
@@ -681,8 +740,9 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
             "location": listing.location or "Location on request",
             "defects": listing.defects,
             "badges": _listing_badges(listing),
-            "gallery": gallery,
-            "primary_image_url": gallery[0],
+            "gallery": media_gallery,
+            "primary_media": media_gallery[0],
+            "primary_image_url": listing.primary_image_url or media_gallery[0]["poster_url"],
             "seller_name": listing.seller.display_name,
             "seller_initials": listing.seller.initials,
             "seller_verification_label": "Verified" if _seller_is_verified(listing.seller) else "Verification pending",
@@ -883,9 +943,8 @@ def profile_view(request):
         messages.success(request, "Your profile has been updated.")
         return redirect("dashboard_profile")
 
-    return render(
-        request,
-        "dashboard/profile.html",
+    context = build_dashboard_context(request.user)
+    context.update(
         {
             "form": form,
             **_dashboard_shell_context(
@@ -899,7 +958,12 @@ def profile_view(request):
                 ),
                 page_variant="form",
             ),
-        },
+        }
+    )
+    return render(
+        request,
+        "dashboard/profile.html",
+        context,
     )
 
 
@@ -913,9 +977,8 @@ def update_password_view(request):
         messages.success(request, "Your password has been updated.")
         return redirect("dashboard_update_password")
 
-    return render(
-        request,
-        "dashboard/update_password.html",
+    context = build_dashboard_context(request.user)
+    context.update(
         {
             "form": form,
             **_dashboard_shell_context(
@@ -928,7 +991,12 @@ def update_password_view(request):
                 ),
                 page_variant="form",
             ),
-        },
+        }
+    )
+    return render(
+        request,
+        "dashboard/update_password.html",
+        context,
     )
 
 
@@ -975,20 +1043,21 @@ def listings_view(request):
 @login_required
 @csrf_protect
 def sell_item_view(request):
-    form = ListingForm(request.POST or None)
+    form = ListingForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         listing = form.save(commit=False)
         listing.seller = request.user
         listing.save()
+        form.save_media(listing)
         messages.success(request, "Your listing is live in Declutro.")
         return redirect("dashboard_listings")
 
-    return render(
-        request,
-        "dashboard/listing_form.html",
+    context = build_dashboard_context(request.user)
+    context.update(
         {
             "form": form,
             "submit_label": "Create listing",
+            "listing_media_preview": _listing_form_preview(),
             **_dashboard_shell_context(
                 "listings",
                 page_title="Sell item",
@@ -1000,7 +1069,12 @@ def sell_item_view(request):
                 ),
                 page_variant="form",
             ),
-        },
+        }
+    )
+    return render(
+        request,
+        "dashboard/listing_form.html",
+        context,
     )
 
 
@@ -1008,18 +1082,20 @@ def sell_item_view(request):
 @csrf_protect
 def edit_listing_view(request, listing_id):
     listing = get_object_or_404(Listing, pk=listing_id, seller=request.user)
-    form = ListingForm(request.POST or None, instance=listing)
+    form = ListingForm(request.POST or None, request.FILES or None, instance=listing)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        listing = form.save(commit=False)
+        listing.save()
+        form.save_media(listing)
         messages.success(request, "Listing updated.")
         return redirect("dashboard_listings")
 
-    return render(
-        request,
-        "dashboard/listing_form.html",
+    context = build_dashboard_context(request.user)
+    context.update(
         {
             "form": form,
             "listing": listing,
+            "listing_media_preview": _listing_form_preview(listing),
             "submit_label": "Save listing",
             **_dashboard_shell_context(
                 "listings",
@@ -1032,7 +1108,12 @@ def edit_listing_view(request, listing_id):
                 ),
                 page_variant="form",
             ),
-        },
+        }
+    )
+    return render(
+        request,
+        "dashboard/listing_form.html",
+        context,
     )
 
 

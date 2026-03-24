@@ -1,6 +1,7 @@
 import json
 import hmac
 import hashlib
+import tempfile
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
@@ -8,21 +9,32 @@ from unittest.mock import patch
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.test import Client, TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .forms import ProfileUpdateForm
-from .models import Listing, Offer, Transaction
+from .models import Listing, ListingMedia, Offer, Transaction
 from .services import SESEmailService, TermiiSMSService
 
 
 User = get_user_model()
+TEST_MEDIA_ROOT = tempfile.mkdtemp(prefix="declutro-test-media-")
+
+
+def uploaded_image(name="item.jpg"):
+    return SimpleUploadedFile(name, b"fake-image-bytes", content_type="image/jpeg")
+
+
+def uploaded_video(name="demo.mp4"):
+    return SimpleUploadedFile(name, b"fake-video-bytes", content_type="video/mp4")
 
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
 )
 class UserModelAndAuthTests(TestCase):
     def test_create_user_normalizes_fields(self):
@@ -74,6 +86,7 @@ class UserModelAndAuthTests(TestCase):
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
 )
 class AuthFlowTests(TestCase):
     def setUp(self):
@@ -225,8 +238,9 @@ class AuthFlowTests(TestCase):
                 "price": "950000",
                 "condition": Listing.Condition.LIKE_NEW,
                 "location": "Lagos",
-                "image_url": "https://example.com/macbook-air.jpg",
-                "gallery_image_urls": "",
+                "primary_image_upload": uploaded_image("macbook-air.jpg"),
+                "gallery_uploads": [uploaded_image("macbook-side.jpg")],
+                "video_uploads": [uploaded_video("macbook-spin.mp4")],
                 "is_negotiable": "on",
                 "status": Listing.Status.ACTIVE,
                 "description": "Clean condition with charger.",
@@ -236,12 +250,16 @@ class AuthFlowTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("dashboard_listings"))
-        self.assertTrue(Listing.objects.filter(seller=self.user, title="MacBook Air M2").exists())
+        listing = Listing.objects.get(seller=self.user, title="MacBook Air M2")
+        self.assertTrue(listing.primary_image)
+        self.assertEqual(listing.media_assets.filter(asset_type=ListingMedia.AssetType.IMAGE).count(), 1)
+        self.assertEqual(listing.media_assets.filter(asset_type=ListingMedia.AssetType.VIDEO).count(), 1)
         self.assertContains(response, "MacBook Air M2")
 
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
 )
 class DashboardWorkspaceRenderTests(TestCase):
     def setUp(self):
@@ -295,11 +313,14 @@ class DashboardWorkspaceRenderTests(TestCase):
 
         self.assertContains(response, "data-dashboard-image-preview")
         self.assertContains(response, "data-dashboard-image-placeholder")
-        self.assertContains(response, "data-dashboard-image-input")
+        self.assertContains(response, "data-dashboard-primary-upload")
+        self.assertContains(response, "data-dashboard-gallery-upload")
+        self.assertContains(response, "data-dashboard-video-upload")
 
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
 )
 class PublicSurfaceRenderTests(TestCase):
     def setUp(self):
@@ -357,10 +378,24 @@ class PublicSurfaceRenderTests(TestCase):
         self.assertEqual(len(detail_response.context["listing"]["journey_steps"]), 3)
         self.assertContains(detail_response, "product-seller-card")
 
+    def test_listing_detail_supports_uploaded_video_media(self):
+        ListingMedia.objects.create(
+            listing=self.listing,
+            asset_type=ListingMedia.AssetType.VIDEO,
+            file=uploaded_video("ipad-demo.mp4"),
+            position=1,
+        )
+
+        response = self.client.get(reverse("listing_detail", kwargs={"listing_id": self.listing.pk}))
+
+        self.assertContains(response, "data-gallery-stage-video")
+        self.assertContains(response, 'data-media-type="video"')
+
 
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
     PAYSTACK_SECRET_KEY="sk_test_declutro",
+    MEDIA_ROOT=TEST_MEDIA_ROOT,
 )
 class PublicMarketplaceTests(TestCase):
     def setUp(self):

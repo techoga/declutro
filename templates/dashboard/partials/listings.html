@@ -9,16 +9,29 @@
 
     <div class="dashboard-listing-board">
         {% for key, column in listing_columns.items %}
-            <div class="dashboard-subsection">
+            <div class="dashboard-subsection dashboard-listing-column dashboard-listing-column-{{ key }}">
                 <div class="dashboard-subsection-heading">
-                    <h3>{{ column.title }}</h3>
+                    <div>
+                        <h3>{{ column.title }}</h3>
+                        <p class="dashboard-subsection-copy">
+                            {% if key == "active" %}
+                                Visible to buyers and ready for fresh offers.
+                            {% elif key == "locked" %}
+                                Temporarily reserved while a winning buyer completes the flow.
+                            {% elif key == "sold" %}
+                                Closed inventory retained for reference and trust history.
+                            {% else %}
+                                Hidden, paused, or draft listings waiting for your next move.
+                            {% endif %}
+                        </p>
+                    </div>
                     <span class="dashboard-count-pill">{{ column.items|length }}</span>
                 </div>
 
                 <div class="dashboard-stack-list">
                     {% for listing in column.items %}
                         <article class="dashboard-listing-row" id="listing-{{ listing.id }}">
-                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="dashboard-listing-image">
+                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="dashboard-listing-image" loading="lazy">
                             <div class="dashboard-listing-copy">
                                 <div class="dashboard-card-row">
                                     <div>

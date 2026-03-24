@@ -22,7 +22,10 @@
         <div class="workspace-rail-header">
             <a href="{% url 'home' %}" class="workspace-brand">
                 <span class="workspace-brand-mark"></span>
-                <span>Declutro</span>
+                <span class="workspace-brand-copy">
+                    <span class="workspace-brand-overline">Declutro</span>
+                    <span class="workspace-brand-name">Control room</span>
+                </span>
             </a>
             <button
                 type="button"
@@ -37,9 +40,24 @@
 
         <div class="workspace-rail-body">
             <section class="workspace-owner-card">
-                <p class="workspace-label">Workspace</p>
-                <h2>{{ request.user.display_name }}</h2>
-                <p>Calm, compact control over listings, transactions, and the next action that matters.</p>
+                <div class="workspace-owner-top">
+                    <span class="workspace-owner-avatar">{{ request.user.initials }}</span>
+                    <div>
+                        <p class="workspace-label">Control room</p>
+                        <h2>{{ request.user.display_name }}</h2>
+                    </div>
+                </div>
+                <p>Run inventory, offers, payments, and meetups from one tighter operating view.</p>
+                <div class="workspace-owner-stats" aria-label="Workspace snapshot">
+                    <article>
+                        <strong>{{ open_transactions_total }}</strong>
+                        <span>live deals</span>
+                    </article>
+                    <article>
+                        <strong>{{ action_items|length }}</strong>
+                        <span>in queue</span>
+                    </article>
+                </div>
             </section>
 
             <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary workspace-primary-cta">Sell Item</a>
@@ -48,49 +66,33 @@
                 {% for item in dashboard_nav_items %}
                     <a href="{{ item.href }}" class="workspace-nav-link{% if item.is_active %} is-active{% endif %}">
                         <span class="workspace-nav-icon" aria-hidden="true">
-                            {% if item.icon == "overview" %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect>
-                                    <rect x="13.5" y="3.5" width="7" height="5" rx="2"></rect>
-                                    <rect x="13.5" y="11.5" width="7" height="9" rx="2"></rect>
-                                    <rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect>
-                                </svg>
-                            {% elif item.icon == "transactions" %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <path d="M4 7h16"></path>
-                                    <path d="M4 12h10"></path>
-                                    <path d="M4 17h7"></path>
-                                    <path d="M16.5 15.5 20 12l-3.5-3.5"></path>
-                                </svg>
-                            {% elif item.icon == "listings" %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <path d="M4 7.5h16"></path>
-                                    <path d="M4 12h16"></path>
-                                    <path d="M4 16.5h16"></path>
-                                    <circle cx="7" cy="7.5" r="1.2" fill="currentColor" stroke="none"></circle>
-                                    <circle cx="10" cy="12" r="1.2" fill="currentColor" stroke="none"></circle>
-                                    <circle cx="13" cy="16.5" r="1.2" fill="currentColor" stroke="none"></circle>
-                                </svg>
-                            {% elif item.icon == "profile" %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <circle cx="12" cy="8.2" r="3.4"></circle>
-                                    <path d="M5 19.2c1.6-3 4.1-4.5 7-4.5s5.4 1.5 7 4.5"></path>
-                                </svg>
-                            {% else %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                    <circle cx="12" cy="12" r="3.1"></circle>
-                                    <path d="m19.4 15 .6 1.1-1.5 2.5-1.3-.1a7.8 7.8 0 0 1-1.8 1l-.5 1.2h-2.9l-.5-1.2a7.8 7.8 0 0 1-1.8-1l-1.3.1-1.5-2.5.6-1.1a8.4 8.4 0 0 1 0-2l-.6-1.1 1.5-2.5 1.3.1a7.8 7.8 0 0 1 1.8-1l.5-1.2h2.9l.5 1.2a7.8 7.8 0 0 1 1.8 1l1.3-.1 1.5 2.5-.6 1.1a8.4 8.4 0 0 1 0 2Z"></path>
-                                </svg>
-                            {% endif %}
+                            {% include "dashboard/partials/nav_icon.html" with icon=item.icon %}
                         </span>
                         <span>{{ item.label }}</span>
                     </a>
                 {% endfor %}
             </nav>
 
-            <section class="workspace-rail-note">
-                <p class="workspace-label">Focus</p>
-                <p>Keep actions obvious, reduce visual noise, and make every state change feel intentional.</p>
+            <section class="workspace-rail-panel">
+                <div>
+                    <p class="workspace-label">Live signal</p>
+                    <h3>Stay ahead of drift</h3>
+                </div>
+                <div class="workspace-rail-kpis">
+                    <article>
+                        <span>Inventory</span>
+                        <strong>{{ listings_total }}</strong>
+                    </article>
+                    <article>
+                        <span>Closed</span>
+                        <strong>{{ closed_transactions_total }}</strong>
+                    </article>
+                </div>
+                {% if using_demo_data %}
+                    <p class="workspace-rail-panel-copy">Preview data stays visible until your first live listings and transactions start flowing.</p>
+                {% else %}
+                    <p class="workspace-rail-panel-copy">Deals, inventory, and trust states stay readable without wasting horizontal space.</p>
+                {% endif %}
             </section>
         </div>
     </aside>
@@ -118,9 +120,18 @@
             </div>
 
             <div class="workspace-toolbar-actions">
+                <div class="workspace-toolbar-meta" aria-label="Workspace summary">
+                    <span class="workspace-toolbar-chip workspace-toolbar-chip-emphasis">{{ action_items|length }} in queue</span>
+                    <span class="workspace-toolbar-chip">{{ open_transactions_total }} live deals</span>
+                    <span class="workspace-toolbar-chip">{{ listings_total }} listings</span>
+                </div>
                 <div class="dropdown" data-dropdown>
                     <button type="button" class="avatar-button workspace-account-trigger" data-dropdown-trigger aria-expanded="false">
                         <span class="avatar-circle">{{ request.user.initials }}</span>
+                        <span class="workspace-account-trigger-copy">
+                            <strong>{{ request.user.display_name }}</strong>
+                            <span>Account</span>
+                        </span>
                     </button>
                     <div class="dropdown-menu workspace-account-menu" data-dropdown-menu hidden>
                         <div class="workspace-account-summary">
@@ -143,5 +154,28 @@
             {% block dashboard_content %}{% endblock %}
         </main>
     </div>
+
+    <nav class="workspace-mobile-dock" aria-label="Dashboard quick navigation">
+        <a href="{% url 'dashboard_home' %}" class="workspace-mobile-link{% if active_nav == 'dashboard' %} is-active{% endif %}">
+            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="overview" %}</span>
+            <span>Home</span>
+        </a>
+        <a href="{% url 'dashboard_transactions' %}" class="workspace-mobile-link{% if active_nav == 'transactions' %} is-active{% endif %}">
+            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="transactions" %}</span>
+            <span>Deals</span>
+        </a>
+        <a href="{% url 'dashboard_sell_item' %}" class="workspace-mobile-link workspace-mobile-link-primary{% if active_nav == 'sell' %} is-active{% endif %}">
+            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="sell" %}</span>
+            <span>Sell</span>
+        </a>
+        <a href="{% url 'dashboard_listings' %}" class="workspace-mobile-link{% if active_nav == 'listings' %} is-active{% endif %}">
+            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="listings" %}</span>
+            <span>Listings</span>
+        </a>
+        <a href="{% url 'dashboard_profile' %}" class="workspace-mobile-link{% if active_nav == 'profile' or active_nav == 'settings' %} is-active{% endif %}">
+            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="profile" %}</span>
+            <span>Profile</span>
+        </a>
+    </nav>
 </div>
 {% endblock %}

@@ -782,11 +782,13 @@ body.public-nav-open {
 .product-gallery-stage {
     overflow: hidden;
     border-radius: 28px;
+    background: linear-gradient(180deg, rgba(228, 236, 250, 0.8), rgba(241, 245, 252, 0.92));
 }
 
-.product-gallery-stage img {
+.product-gallery-stage-media {
     width: 100%;
     aspect-ratio: 4 / 3;
+    display: block;
     object-fit: cover;
 }
 
@@ -810,6 +812,35 @@ body.public-nav-open {
     width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
+}
+
+.product-gallery-thumb-video {
+    position: relative;
+}
+
+.product-gallery-thumb-video video {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: block;
+    object-fit: cover;
+    background: #0d1728;
+}
+
+.product-gallery-thumb-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(13, 23, 40, 0.84);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
 }
 
 .product-gallery-thumb:hover,

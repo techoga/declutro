@@ -51,38 +51,143 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const imageInput = document.querySelector("[data-dashboard-image-input]");
+    const primaryImageInput = document.querySelector("[data-dashboard-primary-upload]");
+    const galleryInput = document.querySelector("[data-dashboard-gallery-upload]");
+    const videoInput = document.querySelector("[data-dashboard-video-upload]");
     const imagePreview = document.querySelector("[data-dashboard-image-preview]");
     const imagePlaceholder = document.querySelector("[data-dashboard-image-placeholder]");
+    const galleryPreviewList = document.querySelector("[data-dashboard-gallery-preview-list]");
+    const galleryPreviewEmpty = document.querySelector("[data-dashboard-gallery-preview-empty]");
+    const videoPreviewList = document.querySelector("[data-dashboard-video-preview-list]");
+    const videoPreviewEmpty = document.querySelector("[data-dashboard-video-preview-empty]");
+    const previewUrls = [];
+    const existingCoverSrc = imagePreview ? imagePreview.getAttribute("src") || "" : "";
+    const initialGalleryMarkup = galleryPreviewList ? galleryPreviewList.innerHTML : "";
+    const initialVideoMarkup = videoPreviewList ? videoPreviewList.innerHTML : "";
 
-    const updatePreview = (value) => {
+    const rememberPreviewUrl = (url) => {
+        previewUrls.push(url);
+        return url;
+    };
+
+    const clearPreviewUrls = () => {
+        while (previewUrls.length) {
+            URL.revokeObjectURL(previewUrls.pop());
+        }
+    };
+
+    const updateCoverPreview = (file) => {
         if (!imagePreview || !imagePlaceholder) {
             return;
         }
 
-        const trimmedValue = value.trim();
-        if (!trimmedValue) {
-            imagePreview.hidden = true;
-            imagePreview.removeAttribute("src");
-            imagePlaceholder.hidden = false;
+        if (!file) {
+            if (existingCoverSrc) {
+                imagePreview.src = existingCoverSrc;
+                imagePreview.hidden = false;
+                imagePlaceholder.hidden = true;
+            } else {
+                imagePreview.hidden = true;
+                imagePreview.removeAttribute("src");
+                imagePlaceholder.hidden = false;
+            }
             return;
         }
 
-        imagePreview.src = trimmedValue;
+        imagePreview.src = rememberPreviewUrl(URL.createObjectURL(file));
         imagePreview.hidden = false;
         imagePlaceholder.hidden = true;
     };
 
-    if (imageInput && imagePreview && imagePlaceholder) {
-        updatePreview(imageInput.value || "");
+    const renderMediaPreview = (files, list, empty, type) => {
+        if (!list || !empty) {
+            return;
+        }
 
-        imageInput.addEventListener("input", () => {
-            updatePreview(imageInput.value || "");
+        list.innerHTML = "";
+        if (!files.length) {
+            if ((type === "video" && initialVideoMarkup) || (type !== "video" && initialGalleryMarkup)) {
+                list.innerHTML = type === "video" ? initialVideoMarkup : initialGalleryMarkup;
+                empty.hidden = true;
+            } else {
+                empty.hidden = false;
+            }
+            return;
+        }
+
+        files.forEach((file, index) => {
+            const item = document.createElement("article");
+            item.className = `dashboard-preview-media-card${type === "video" ? " dashboard-preview-media-card-video" : ""}`;
+
+            const label = document.createElement("span");
+            label.textContent = file.name || `${type === "video" ? "Video" : "Image"} ${index + 1}`;
+
+            if (type === "video") {
+                const video = document.createElement("video");
+                video.className = "dashboard-preview-media-video";
+                video.src = rememberPreviewUrl(URL.createObjectURL(file));
+                video.controls = true;
+                video.preload = "metadata";
+                item.appendChild(video);
+            } else {
+                const image = document.createElement("img");
+                image.className = "dashboard-preview-media-thumb";
+                image.src = rememberPreviewUrl(URL.createObjectURL(file));
+                image.alt = label.textContent;
+                item.appendChild(image);
+            }
+
+            item.appendChild(label);
+            list.appendChild(item);
         });
 
-        imagePreview.addEventListener("error", () => {
-            imagePreview.hidden = true;
-            imagePlaceholder.hidden = false;
+        empty.hidden = true;
+    };
+
+    if (imagePreview && imagePlaceholder) {
+        const primeFromExistingStage = imagePreview.getAttribute("src");
+        if (primeFromExistingStage) {
+            imagePreview.hidden = false;
+            imagePlaceholder.hidden = true;
+        }
+    }
+
+    if (primaryImageInput && imagePreview && imagePlaceholder) {
+        primaryImageInput.addEventListener("change", () => {
+            clearPreviewUrls();
+            const file = primaryImageInput.files && primaryImageInput.files[0] ? primaryImageInput.files[0] : null;
+            updateCoverPreview(file);
+
+            const galleryFiles = galleryInput && galleryInput.files ? Array.from(galleryInput.files) : [];
+            const videoFiles = videoInput && videoInput.files ? Array.from(videoInput.files) : [];
+            renderMediaPreview(galleryFiles, galleryPreviewList, galleryPreviewEmpty, "image");
+            renderMediaPreview(videoFiles, videoPreviewList, videoPreviewEmpty, "video");
+        });
+    }
+
+    if (galleryInput) {
+        galleryInput.addEventListener("change", () => {
+            clearPreviewUrls();
+            const coverFile = primaryImageInput && primaryImageInput.files && primaryImageInput.files[0]
+                ? primaryImageInput.files[0]
+                : null;
+            updateCoverPreview(coverFile || (galleryInput.files && galleryInput.files[0] ? galleryInput.files[0] : null));
+            renderMediaPreview(Array.from(galleryInput.files || []), galleryPreviewList, galleryPreviewEmpty, "image");
+            renderMediaPreview(Array.from((videoInput && videoInput.files) || []), videoPreviewList, videoPreviewEmpty, "video");
+        });
+    }
+
+    if (videoInput) {
+        videoInput.addEventListener("change", () => {
+            clearPreviewUrls();
+            const coverFile = primaryImageInput && primaryImageInput.files && primaryImageInput.files[0]
+                ? primaryImageInput.files[0]
+                : galleryInput && galleryInput.files && galleryInput.files[0]
+                    ? galleryInput.files[0]
+                    : null;
+            updateCoverPreview(coverFile);
+            renderMediaPreview(Array.from((galleryInput && galleryInput.files) || []), galleryPreviewList, galleryPreviewEmpty, "image");
+            renderMediaPreview(Array.from(videoInput.files || []), videoPreviewList, videoPreviewEmpty, "video");
         });
     }
 });

@@ -3,6 +3,20 @@
         <p class="dashboard-page-eyebrow">{{ page_eyebrow }}</p>
         <h1>{{ page_heading }}</h1>
         <p>{{ page_description }}</p>
+        <div class="dashboard-page-header-meta" aria-label="Page snapshot">
+            <article class="dashboard-inline-stat">
+                <span class="dashboard-inline-stat-label">Action queue</span>
+                <strong class="dashboard-inline-stat-value">{{ action_items|length }}</strong>
+            </article>
+            <article class="dashboard-inline-stat">
+                <span class="dashboard-inline-stat-label">Live deals</span>
+                <strong class="dashboard-inline-stat-value">{{ open_transactions_total }}</strong>
+            </article>
+            <article class="dashboard-inline-stat">
+                <span class="dashboard-inline-stat-label">Inventory</span>
+                <strong class="dashboard-inline-stat-value">{{ listings_total }}</strong>
+            </article>
+        </div>
     </div>
 
     <div class="dashboard-page-header-side">
@@ -18,7 +32,7 @@
         {% if using_demo_data and page_variant != "form" %}
             <div class="dashboard-preview-note">
                 <strong>Preview mode</strong>
-                <span>Sample data is displayed until your live transactions and listings start flowing.</span>
+                <span>Sample data is visible so the dashboard still reads like a finished product before launch.</span>
             </div>
         {% endif %}
     </div>

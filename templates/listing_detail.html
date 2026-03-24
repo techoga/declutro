@@ -31,22 +31,45 @@
                 <div class="product-gallery-card">
                     <div class="product-gallery-stage">
                         <img
-                            src="{{ listing.primary_image_url }}"
+                            src="{{ listing.primary_media.url }}"
                             alt="{{ listing.title }}"
-                            id="listing-detail-image"
-                            data-gallery-stage
+                            class="product-gallery-stage-media"
+                            data-gallery-stage-image
+                            {% if listing.primary_media.kind != "image" %}hidden{% endif %}
                         >
+                        <video
+                            class="product-gallery-stage-media"
+                            data-gallery-stage-video
+                            controls
+                            playsinline
+                            preload="metadata"
+                            poster="{{ listing.primary_media.poster_url }}"
+                            {% if listing.primary_media.kind != "video" %}hidden{% endif %}
+                        >
+                            {% if listing.primary_media.kind == "video" %}
+                                <source src="{{ listing.primary_media.url }}">
+                            {% endif %}
+                        </video>
                     </div>
                     <div class="product-gallery-thumbs">
-                        {% for image in listing.gallery %}
+                        {% for item in listing.gallery %}
                             <button
                                 type="button"
                                 class="product-gallery-thumb{% if forloop.first %} is-active{% endif %}"
                                 data-gallery-thumb
-                                data-image-src="{{ image }}"
-                                aria-label="View image {{ forloop.counter }}"
+                                data-media-type="{{ item.kind }}"
+                                data-media-src="{{ item.url }}"
+                                data-media-poster="{{ item.poster_url }}"
+                                aria-label="View {{ item.kind }} {{ forloop.counter }}"
                             >
-                                <img src="{{ image }}" alt="{{ listing.title }} view {{ forloop.counter }}">
+                                {% if item.kind == "video" %}
+                                    <div class="product-gallery-thumb-video">
+                                        <video src="{{ item.url }}" muted playsinline preload="metadata"></video>
+                                        <span class="product-gallery-thumb-badge">Video</span>
+                                    </div>
+                                {% else %}
+                                    <img src="{{ item.url }}" alt="{{ item.label }}">
+                                {% endif %}
                             </button>
                         {% endfor %}
                     </div>

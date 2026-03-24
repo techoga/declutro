@@ -13,51 +13,80 @@
                 {% endif %}
                 <a href="{% url 'dashboard_transactions' %}" class="btn btn-secondary">Review transactions</a>
             </div>
+
+            <div class="dashboard-overview-highlights" aria-label="Dashboard summary">
+                {% for metric in dashboard_metrics %}
+                    <article class="dashboard-highlight-tile">
+                        <p>{{ metric.label }}</p>
+                        <strong>{{ metric.value }}</strong>
+                        <span>{{ metric.caption }}</span>
+                    </article>
+                {% endfor %}
+            </div>
         </div>
 
-        <aside class="dashboard-overview-panel">
-            <div class="dashboard-overview-panel-head">
-                <div>
-                    <p class="workspace-label">Workspace pulse</p>
-                    <h2>Today at a glance</h2>
+        <div class="dashboard-overview-stack">
+            <aside class="dashboard-overview-panel">
+                <div class="dashboard-overview-panel-head">
+                    <div>
+                        <p class="workspace-label">Workspace pulse</p>
+                        <h2>Today at a glance</h2>
+                    </div>
+                    <span class="dashboard-stat-badge">{{ open_transactions_total }} active</span>
                 </div>
-                <span class="dashboard-stat-badge">{{ open_transactions_total }} active</span>
-            </div>
 
-            <div class="dashboard-overview-panel-metrics">
-                <article>
-                    <span>Listings in motion</span>
-                    <strong>{{ listings_total }}</strong>
-                </article>
-                <article>
-                    <span>Closed history</span>
-                    <strong>{{ closed_transactions_total }}</strong>
-                </article>
-                <article>
-                    <span>Action queue</span>
-                    <strong>{{ action_items|length }}</strong>
-                </article>
-            </div>
-
-            {% if using_demo_data %}
-                <div class="dashboard-preview-note">
-                    <strong>Preview mode</strong>
-                    <span>Sample transactions are shown until live buying and selling activity starts.</span>
+                <div class="dashboard-overview-panel-metrics">
+                    <article>
+                        <span>Listings in motion</span>
+                        <strong>{{ listings_total }}</strong>
+                    </article>
+                    <article>
+                        <span>Closed history</span>
+                        <strong>{{ closed_transactions_total }}</strong>
+                    </article>
+                    <article>
+                        <span>Action queue</span>
+                        <strong>{{ action_items|length }}</strong>
+                    </article>
                 </div>
-            {% else %}
-                <p class="dashboard-overview-panel-copy">Your workspace is connected to real listings, offers, and transaction milestones.</p>
-            {% endif %}
-        </aside>
-    </section>
 
-    <section class="dashboard-metric-grid" aria-label="Dashboard summary">
-        {% for metric in dashboard_metrics %}
-            <article class="dashboard-metric-card">
-                <p>{{ metric.label }}</p>
-                <strong>{{ metric.value }}</strong>
-                <span>{{ metric.caption }}</span>
-            </article>
-        {% endfor %}
+                {% if using_demo_data %}
+                    <div class="dashboard-preview-note">
+                        <strong>Preview mode</strong>
+                        <span>Sample transactions are shown until live buying and selling activity starts.</span>
+                    </div>
+                {% else %}
+                    <p class="dashboard-overview-panel-copy">Your workspace is connected to real listings, offers, and transaction milestones.</p>
+                {% endif %}
+            </aside>
+
+            <aside class="dashboard-overview-queue">
+                <div class="dashboard-overview-queue-head">
+                    <div>
+                        <p class="workspace-label">Focus queue</p>
+                        <h2>Next best moves</h2>
+                    </div>
+                    <span class="dashboard-count-pill">{{ action_items|length }}</span>
+                </div>
+
+                <div class="dashboard-overview-queue-list">
+                    {% for item in action_items|slice:":3" %}
+                        <article class="dashboard-overview-queue-item dashboard-tone-{{ item.tone }}">
+                            <div class="dashboard-overview-queue-top">
+                                <strong>{{ item.title }}</strong>
+                                <span class="dashboard-badge dashboard-badge-{{ item.tone }}">{{ item.status }}</span>
+                            </div>
+                            <p>{{ item.description }}</p>
+                        </article>
+                    {% empty %}
+                        <div class="dashboard-empty-state dashboard-empty-state-small">
+                            <h4>No pending actions</h4>
+                            <p>Everything currently in motion is progressing without a blocker.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>
     </section>
 
     {% include "dashboard/partials/action_required.html" %}

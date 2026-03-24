@@ -4,13 +4,31 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
-from .models import Listing
+from .models import Listing, ListingMedia
 from .utils import normalize_email_address, normalize_phone_number, validate_identifier
 
 
 User = get_user_model()
 
 INPUT_CLASS = "form-input"
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+VIDEO_EXTENSIONS = (".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv")
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if not data:
+            return []
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+        return [single_file_clean(data, initial)]
 
 
 class StyledFormMixin:
@@ -20,6 +38,11 @@ class StyledFormMixin:
             css_class = widget.attrs.get("class", "")
             if isinstance(widget, forms.CheckboxInput):
                 widget.attrs["class"] = f"{css_class} checkbox-input".strip()
+                continue
+            if getattr(widget, "input_type", "") == "file":
+                widget.attrs["class"] = f"{css_class} {INPUT_CLASS} form-input-file".strip()
+                widget.attrs.pop("placeholder", None)
+                widget.attrs.pop("autocapitalize", None)
                 continue
             widget.attrs["class"] = f"{css_class} {INPUT_CLASS}".strip()
             widget.attrs.setdefault("placeholder", field.label)
@@ -285,6 +308,36 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
         Listing.Status.ACTIVE,
         Listing.Status.INACTIVE,
     )
+    primary_image_upload = forms.FileField(
+        label="Cover image",
+        required=False,
+        help_text="Upload the main product photo shown across the marketplace.",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "accept": "image/*",
+            }
+        ),
+    )
+    gallery_uploads = MultipleFileField(
+        label="Gallery images",
+        required=False,
+        help_text="Optional. Add extra product photos for the detail gallery.",
+        widget=MultipleFileInput(
+            attrs={
+                "accept": "image/*",
+            }
+        ),
+    )
+    video_uploads = MultipleFileField(
+        label="Product videos",
+        required=False,
+        help_text="Optional. Upload short MP4, MOV, or WebM clips that show the item better.",
+        widget=MultipleFileInput(
+            attrs={
+                "accept": "video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-msvideo,video/x-matroska",
+            }
+        ),
+    )
 
     class Meta:
         model = Listing
@@ -294,8 +347,6 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
             "price",
             "condition",
             "location",
-            "image_url",
-            "gallery_image_urls",
             "is_negotiable",
             "status",
             "description",
@@ -322,21 +373,6 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
                     "autocomplete": "address-level2",
                 }
             ),
-            "image_url": forms.TextInput(
-                attrs={
-                    "placeholder": "https://example.com/item-image.jpg",
-                    "autocomplete": "url",
-                }
-            ),
-            "gallery_image_urls": forms.Textarea(
-                attrs={
-                    "rows": 4,
-                    "placeholder": (
-                        "https://example.com/detail-1.jpg\n"
-                        "https://example.com/detail-2.jpg"
-                    ),
-                }
-            ),
             "is_negotiable": forms.CheckboxInput(),
             "status": forms.Select(),
             "description": forms.Textarea(
@@ -353,14 +389,15 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
             ),
         }
         help_texts = {
-            "gallery_image_urls": "Optional. Add one image URL per line for the detail gallery.",
             "is_negotiable": "Enable this if buyers can submit an offer on the public item page.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         status_field = self.fields["status"]
-        self.fields["image_url"].widget.attrs["data-dashboard-image-input"] = "true"
+        self.fields["primary_image_upload"].widget.attrs["data-dashboard-primary-upload"] = "true"
+        self.fields["gallery_uploads"].widget.attrs["data-dashboard-gallery-upload"] = "true"
+        self.fields["video_uploads"].widget.attrs["data-dashboard-video-upload"] = "true"
         allowed_choices = [
             choice for choice in status_field.choices if choice[0] in self.SELLER_EDITABLE_STATUSES
         ]
@@ -377,6 +414,118 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
         if status in {Listing.Status.LOCKED, Listing.Status.SOLD}:
             raise ValidationError("Locked and sold listings are controlled by the transaction flow.")
         return status
+
+    def clean_primary_image_upload(self):
+        uploaded_file = self.cleaned_data.get("primary_image_upload")
+        if uploaded_file:
+            self._validate_image_file(uploaded_file, "Cover image")
+        return uploaded_file
+
+    def clean_gallery_uploads(self):
+        uploads = self.cleaned_data.get("gallery_uploads") or []
+        for uploaded_file in uploads:
+            self._validate_image_file(uploaded_file, "Gallery image")
+        return uploads
+
+    def clean_video_uploads(self):
+        uploads = self.cleaned_data.get("video_uploads") or []
+        for uploaded_file in uploads:
+            self._validate_video_file(uploaded_file, "Product video")
+        return uploads
+
+    def save(self, commit=True):
+        listing = super().save(commit=False)
+        primary_image = self.cleaned_data.get("primary_image_upload")
+        if primary_image:
+            if listing.pk and listing.primary_image and listing.primary_image.name:
+                listing.primary_image.delete(save=False)
+            listing.primary_image = primary_image
+            listing.image_url = ""
+
+        if commit:
+            listing.save()
+            self.save_media(listing)
+        return listing
+
+    def save_media(self, listing=None):
+        listing = listing or self.instance
+        if not listing.pk:
+            raise ValueError("Listing must be saved before media assets can be attached.")
+
+        clear_legacy_image = bool(listing.primary_image)
+        clear_legacy_gallery = bool(
+            (self.cleaned_data.get("gallery_uploads") or []) or (self.cleaned_data.get("video_uploads") or [])
+        )
+
+        next_position = (
+            listing.media_assets.order_by("-position").values_list("position", flat=True).first() or 0
+        ) + 1
+
+        for uploaded_file in self.cleaned_data.get("gallery_uploads") or []:
+            ListingMedia.objects.create(
+                listing=listing,
+                asset_type=ListingMedia.AssetType.IMAGE,
+                file=uploaded_file,
+                position=next_position,
+            )
+            next_position += 1
+
+        for uploaded_file in self.cleaned_data.get("video_uploads") or []:
+            ListingMedia.objects.create(
+                listing=listing,
+                asset_type=ListingMedia.AssetType.VIDEO,
+                file=uploaded_file,
+                position=next_position,
+            )
+            next_position += 1
+
+        update_fields = []
+        if clear_legacy_image and listing.image_url:
+            listing.image_url = ""
+            update_fields.append("image_url")
+        if clear_legacy_gallery and listing.gallery_image_urls:
+            listing.gallery_image_urls = ""
+            update_fields.append("gallery_image_urls")
+        if update_fields:
+            update_fields.append("updated_at")
+            listing.save(update_fields=update_fields)
+
+    def _validate_image_file(self, uploaded_file, label):
+        self._validate_uploaded_file(
+            uploaded_file,
+            label,
+            allowed_prefix="image/",
+            allowed_extensions=IMAGE_EXTENSIONS,
+            max_size=12 * 1024 * 1024,
+            size_message="must be 12MB or smaller.",
+        )
+
+    def _validate_video_file(self, uploaded_file, label):
+        self._validate_uploaded_file(
+            uploaded_file,
+            label,
+            allowed_prefix="video/",
+            allowed_extensions=VIDEO_EXTENSIONS,
+            max_size=120 * 1024 * 1024,
+            size_message="must be 120MB or smaller.",
+        )
+
+    def _validate_uploaded_file(
+        self,
+        uploaded_file,
+        label,
+        *,
+        allowed_prefix,
+        allowed_extensions,
+        max_size,
+        size_message,
+    ):
+        file_name = (uploaded_file.name or "").lower()
+        content_type = getattr(uploaded_file, "content_type", "") or ""
+        if not content_type.startswith(allowed_prefix) and not file_name.endswith(allowed_extensions):
+            raise ValidationError(f"{label} must be a supported {allowed_prefix.rstrip('/')} file.")
+        if uploaded_file.size > max_size:
+            raise ValidationError(f"{label} {size_message}")
 
 
 class OfferSubmissionForm(StyledFormMixin, forms.Form):

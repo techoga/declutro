@@ -6,10 +6,11 @@
         </div>
     </div>
 
-    <div class="dashboard-verification-list">
+    <div class="dashboard-verification-grid">
         {% for item in verification_items %}
-            <article class="dashboard-verification-row">
+            <article class="dashboard-verification-card">
                 <div>
+                    <p class="workspace-label">Trust signal</p>
                     <h3>{{ item.label }}</h3>
                     <p>{{ item.description }}</p>
                 </div>

@@ -11,7 +11,10 @@
         {% for item in action_items %}
             <article class="dashboard-action-card dashboard-tone-{{ item.tone }}">
                 <div class="dashboard-action-card-head">
-                    <p class="dashboard-card-title">{{ item.title }}</p>
+                    <div class="dashboard-action-card-heading">
+                        <span class="dashboard-action-index">0{{ forloop.counter }}</span>
+                        <p class="dashboard-card-title">{{ item.title }}</p>
+                    </div>
                     <span class="dashboard-badge dashboard-badge-{{ item.tone }}">{{ item.status }}</span>
                 </div>
                 <p class="dashboard-card-copy">{{ item.description }}</p>

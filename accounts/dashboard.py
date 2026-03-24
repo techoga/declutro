@@ -284,7 +284,7 @@ def _serialize_listing(listing, using_demo_data):
 
     return {
         "id": key,
-        "image_url": listing.image_url or _placeholder_image(listing.title),
+        "image_url": listing.primary_image_url or _placeholder_image(listing.title),
         "title": listing.title,
         "price_display": _format_money(listing.price),
         "status_label": listing.get_status_display(),

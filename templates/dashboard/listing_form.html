@@ -4,7 +4,7 @@
     {% include "dashboard/partials/page_header.html" %}
 
     <section class="dashboard-form-card dashboard-form-card-wide">
-        <form method="post" novalidate data-loading-form class="dashboard-form dashboard-form-listing">
+        <form method="post" enctype="multipart/form-data" novalidate data-loading-form class="dashboard-form dashboard-form-listing">
             {% csrf_token %}
             {% if form.non_field_errors %}
                 <div class="alert alert-error">
@@ -46,12 +46,13 @@
                     <section class="dashboard-form-section">
                         <div class="dashboard-section-intro">
                             <p class="workspace-label">Media</p>
-                            <h2>Lead with a strong cover image</h2>
-                            <p>Use clean image URLs so the listing looks credible on first impression.</p>
+                            <h2>Upload photos and video directly</h2>
+                            <p>Add a strong cover image, more gallery shots, and optional product clips without relying on external URLs.</p>
                         </div>
                         <div class="dashboard-field-grid">
-                            {% include "includes/form_field.html" with field=form.image_url %}
-                            {% include "includes/form_field.html" with field=form.gallery_image_urls %}
+                            {% include "includes/form_field.html" with field=form.primary_image_upload %}
+                            {% include "includes/form_field.html" with field=form.gallery_uploads %}
+                            {% include "includes/form_field.html" with field=form.video_uploads %}
                         </div>
                     </section>
 
@@ -72,24 +73,68 @@
                     <section class="dashboard-preview-card">
                         <div class="dashboard-section-intro">
                             <p class="workspace-label">Live preview</p>
-                            <h2>Primary image</h2>
-                            <p>Paste a valid main image URL to preview how the listing cover will feel.</p>
+                            <h2>Media preview</h2>
+                            <p>Check the cover image, queued gallery shots, and uploaded videos before you publish.</p>
                         </div>
                         <div class="dashboard-preview-frame">
                             <img
-                                src="{{ form.image_url.value|default:'' }}"
+                                src="{{ listing_media_preview.cover_url|default:'' }}"
                                 alt="Listing preview"
                                 class="dashboard-preview-image"
                                 data-dashboard-image-preview
-                                {% if not form.image_url.value %}hidden{% endif %}
+                                {% if not listing_media_preview.cover_url %}hidden{% endif %}
                             >
                             <div
                                 class="dashboard-preview-placeholder"
                                 data-dashboard-image-placeholder
-                                {% if form.image_url.value %}hidden{% endif %}
+                                {% if listing_media_preview.cover_url %}hidden{% endif %}
                             >
-                                A clean image preview will appear here.
+                                Upload a cover image to preview the main marketplace thumbnail here.
                             </div>
+                        </div>
+
+                        <div class="dashboard-preview-group">
+                            <div class="dashboard-preview-group-head">
+                                <p>Gallery images</p>
+                                <span>{{ listing_media_preview.gallery_items|length }}</span>
+                            </div>
+                            <div class="dashboard-preview-media-grid" data-dashboard-gallery-preview-list>
+                                {% for item in listing_media_preview.gallery_items %}
+                                    <article class="dashboard-preview-media-card">
+                                        <img src="{{ item.url }}" alt="{{ item.label }}" class="dashboard-preview-media-thumb">
+                                        <span>{{ item.label }}</span>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                            <p
+                                class="dashboard-preview-empty"
+                                data-dashboard-gallery-preview-empty
+                                {% if listing_media_preview.gallery_items %}hidden{% endif %}
+                            >
+                                Additional uploaded images will preview here.
+                            </p>
+                        </div>
+
+                        <div class="dashboard-preview-group">
+                            <div class="dashboard-preview-group-head">
+                                <p>Product videos</p>
+                                <span>{{ listing_media_preview.video_items|length }}</span>
+                            </div>
+                            <div class="dashboard-preview-media-grid dashboard-preview-media-grid-video" data-dashboard-video-preview-list>
+                                {% for item in listing_media_preview.video_items %}
+                                    <article class="dashboard-preview-media-card dashboard-preview-media-card-video">
+                                        <video class="dashboard-preview-media-video" src="{{ item.url }}" controls preload="metadata"></video>
+                                        <span>{{ item.label }}</span>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                            <p
+                                class="dashboard-preview-empty"
+                                data-dashboard-video-preview-empty
+                                {% if listing_media_preview.video_items %}hidden{% endif %}
+                            >
+                                Uploaded clips will preview here.
+                            </p>
                         </div>
                     </section>
 
