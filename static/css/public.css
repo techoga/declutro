@@ -1781,6 +1781,10 @@ body.public-nav-open {
     cursor: pointer;
 }
 
+.product-gallery-stage-media[data-gallery-open-trigger] {
+    cursor: zoom-in;
+}
+
 .product-gallery-thumbs {
     display: flex;
     gap: 12px;
@@ -1815,6 +1819,21 @@ body.public-nav-open {
 
 .product-gallery-lightbox-card .public-modal-header {
     align-items: flex-start;
+}
+
+.product-gallery-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    font-size: 0.86rem;
+    font-weight: 800;
+    cursor: pointer;
 }
 
 .product-gallery-lightbox-body {

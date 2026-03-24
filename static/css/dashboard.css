@@ -3322,6 +3322,21 @@
     gap: 14px;
 }
 
+.dashboard-compliance-private-note {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(25, 40, 72, 0.08);
+    border-radius: 18px;
+    background: rgba(244, 248, 255, 0.95);
+}
+
+.dashboard-compliance-private-note p {
+    margin: 0;
+    color: var(--workspace-text-soft);
+}
+
 .dashboard-compliance-summary {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.88fr);

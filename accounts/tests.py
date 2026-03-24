@@ -240,6 +240,8 @@ class AuthFlowTests(TestCase):
                 "account_type": User.AccountType.BUSINESS,
                 "business_name": "Declutro Devices Ltd",
                 "social_handle": "@declutro.store",
+                "identity_document_type": User.IdentityDocumentType.NATIONAL_ID,
+                "identity_document": uploaded_document("national-id.pdf"),
                 "cac_certificate": uploaded_document(),
             },
             follow=True,
@@ -250,7 +252,31 @@ class AuthFlowTests(TestCase):
         self.assertEqual(self.user.account_type, User.AccountType.BUSINESS)
         self.assertEqual(self.user.business_name, "Declutro Devices Ltd")
         self.assertEqual(self.user.social_handle, "declutro.store")
+        self.assertEqual(self.user.identity_document_type, User.IdentityDocumentType.NATIONAL_ID)
+        self.assertTrue(self.user.identity_document)
+        self.assertTrue(self.user.is_identity_verified)
         self.assertTrue(self.user.cac_certificate)
+
+    def test_compliance_update_accepts_nin_only_verification(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dashboard_compliance"),
+            data={
+                "account_type": User.AccountType.INDIVIDUAL,
+                "business_name": "",
+                "social_handle": "",
+                "identity_document_type": User.IdentityDocumentType.NIN,
+                "nin_number": "12345678901",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("dashboard_compliance"))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.identity_document_type, User.IdentityDocumentType.NIN)
+        self.assertEqual(self.user.nin_number, "12345678901")
+        self.assertTrue(self.user.is_identity_verified)
 
     def test_sell_item_creates_listing(self):
         self.client.force_login(self.user)
@@ -404,6 +430,7 @@ class PublicSurfaceRenderTests(TestCase):
         self.assertEqual(len(detail_response.context["listing"]["journey_steps"]), 3)
         self.assertContains(detail_response, "product-seller-card")
         self.assertContains(detail_response, "data-gallery-lightbox-open")
+        self.assertEqual(detail_response.content.decode("utf-8").count("data-gallery-open-trigger"), 1)
 
     def test_listing_detail_supports_uploaded_video_media(self):
         ListingMedia.objects.create(
@@ -432,6 +459,8 @@ class PublicMarketplaceTests(TestCase):
             email="seller@declutro.com",
             password="StrongPass123!",
             name="Verified Seller",
+            identity_document_type=User.IdentityDocumentType.NIN,
+            nin_number="12345678901",
             is_email_verified=True,
             is_identity_verified=True,
         )
@@ -515,7 +544,8 @@ class PublicMarketplaceTests(TestCase):
         self.assertContains(response, "Buy Now")
         self.assertContains(response, "Make Offer")
         self.assertContains(response, "Pay now to reserve this item. Inspect before the seller gets paid.")
-        self.assertContains(response, "Trusted seller")
+        self.assertContains(response, "Verified seller")
+        self.assertNotContains(response, "12345678901")
 
     def test_buy_now_requires_authentication(self):
         response = self.client.post(reverse("buy_now", kwargs={"listing_id": self.phone_listing.pk}))

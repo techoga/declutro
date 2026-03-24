@@ -13,7 +13,7 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("-date_joined",)
     list_display = ("phone_number", "email", "name", "account_type", "is_email_verified", "is_staff", "is_active")
     list_filter = ("account_type", "is_phone_verified", "is_email_verified", "is_identity_verified", "is_staff", "is_active", "is_superuser")
-    search_fields = ("phone_number", "email", "name", "business_name", "social_handle")
+    search_fields = ("phone_number", "email", "name", "business_name", "social_handle", "nin_number")
 
     fieldsets = (
         (None, {"fields": ("phone_number", "email", "name", "password")}),
@@ -24,6 +24,9 @@ class UserAdmin(BaseUserAdmin):
                     "account_type",
                     "business_name",
                     "social_handle",
+                    "identity_document_type",
+                    "nin_number",
+                    "identity_document",
                     "cac_certificate",
                     "is_phone_verified",
                     "is_email_verified",

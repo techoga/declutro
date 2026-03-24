@@ -31,6 +31,11 @@ def user_compliance_upload_to(instance, filename):
     return f"users/compliance/{uuid4().hex}{extension}"
 
 
+def user_identity_upload_to(instance, filename):
+    extension = Path(filename or "").suffix.lower()
+    return f"users/identity/{uuid4().hex}{extension}"
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -74,6 +79,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         INDIVIDUAL = "individual", "Individual"
         BUSINESS = "business", "Business"
 
+    class IdentityDocumentType(models.TextChoices):
+        NIN = "nin", "NIN"
+        NATIONAL_ID = "national_id", "National ID"
+        VOTERS_CARD = "voters_card", "Voter's Card"
+        DRIVERS_LICENSE = "drivers_license", "Driver's License"
+
     phone_number = models.CharField(max_length=16, unique=True, db_index=True)
     email = models.EmailField(blank=True, null=True, unique=True)
     name = models.CharField(max_length=150, blank=True)
@@ -84,6 +95,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     business_name = models.CharField(max_length=180, blank=True)
     social_handle = models.CharField(max_length=120, blank=True)
+    identity_document_type = models.CharField(
+        max_length=24,
+        choices=IdentityDocumentType.choices,
+        blank=True,
+    )
+    nin_number = models.CharField(max_length=16, blank=True)
+    identity_document = models.FileField(upload_to=user_identity_upload_to, blank=True)
     cac_certificate = models.FileField(upload_to=user_compliance_upload_to, blank=True)
     is_phone_verified = models.BooleanField(default=True)
     is_email_verified = models.BooleanField(default=False)
@@ -143,6 +161,40 @@ class User(AbstractBaseUser, PermissionsMixin):
         return bool(self.cac_certificate)
 
     @property
+    def normalized_nin_number(self):
+        return "".join(character for character in (self.nin_number or "") if character.isdigit())
+
+    @property
+    def masked_nin_number(self):
+        digits = self.normalized_nin_number
+        if not digits:
+            return ""
+        tail = digits[-4:]
+        return f"{'•' * max(len(digits) - 4, 0)}{tail}"
+
+    @property
+    def has_identity_submission(self):
+        return bool(self.identity_document or self.normalized_nin_number)
+
+    @property
+    def identity_document_label(self):
+        if self.identity_document_type:
+            return self.get_identity_document_type_display()
+        if self.normalized_nin_number:
+            return "NIN"
+        return ""
+
+    @property
+    def private_identity_summary(self):
+        if self.identity_document_type == self.IdentityDocumentType.NIN and self.masked_nin_number:
+            return f"NIN {self.masked_nin_number} is on file."
+        if self.identity_document_label and self.identity_document:
+            return f"{self.identity_document_label} is on file for private review."
+        if self.masked_nin_number:
+            return f"NIN {self.masked_nin_number} is on file."
+        return "No identity document or NIN has been submitted yet."
+
+    @property
     def trust_score(self):
         score = 0
         if self.phone_number and self.is_phone_verified:
@@ -151,7 +203,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             score += 10
         if self.email and self.is_email_verified:
             score += 20
-        if self.is_identity_verified:
+        if self.is_identity_verified or self.has_identity_submission:
             score += 20
         if self.social_handle:
             score += 10

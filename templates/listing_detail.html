@@ -31,9 +31,15 @@
                 <div class="product-gallery-card">
                     <div class="product-gallery-stage">
                         <div class="product-gallery-stage-toolbar">
-                            <span class="product-gallery-stage-label">Media preview</span>
+                            <span class="product-gallery-stage-label">
+                                {% if listing.primary_media.kind == "image" %}
+                                    Tap image to expand
+                                {% else %}
+                                    Open full view when you need a closer look
+                                {% endif %}
+                            </span>
                             <button type="button" class="product-gallery-expand" data-gallery-lightbox-open>
-                                Fullscreen
+                                Open full view
                             </button>
                         </div>
                         <img
@@ -41,6 +47,7 @@
                             alt="{{ listing.title }}"
                             class="product-gallery-stage-media"
                             data-gallery-stage-image
+                            data-gallery-open-trigger
                             {% if listing.primary_media.kind != "image" %}hidden{% endif %}
                         >
                         <video
@@ -196,7 +203,9 @@
                     <p class="public-kicker">Media viewer</p>
                     <h2 id="gallery-lightbox-title">{{ listing.title }}</h2>
                 </div>
-                <button type="button" class="modal-close public-modal-close" data-modal-close aria-label="Close media viewer">×</button>
+                <button type="button" class="product-gallery-close" data-modal-close aria-label="Back to listing">
+                    Back to listing
+                </button>
             </div>
 
             <div class="product-gallery-lightbox-body">

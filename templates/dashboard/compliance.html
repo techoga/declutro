@@ -38,19 +38,52 @@
 
             <section class="dashboard-form-section">
                 <div class="dashboard-section-intro">
-                    <p class="workspace-label">Trust profile</p>
-                    <h2>What buyers can validate</h2>
-                    <p>Keep the public trust layer current so buyers can assess whether they should pay quickly or ask more questions first.</p>
+                    <p class="workspace-label">Public seller profile</p>
+                    <h2>What buyers can see</h2>
+                    <p>These details help buyers recognize the seller, but private verification files stay hidden from the marketplace.</p>
                 </div>
                 <div class="dashboard-field-grid dashboard-field-grid-two">
                     {% include "includes/form_field.html" with field=form.account_type %}
                     {% include "includes/form_field.html" with field=form.social_handle %}
                     {% include "includes/form_field.html" with field=form.business_name %}
+                </div>
+            </section>
+
+            <section class="dashboard-form-section">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Private identity verification</p>
+                    <h2>Upload an ID or store a NIN</h2>
+                    <p>Use a National ID, Voter's Card, Driver's License, or NIN only. Buyers never see the raw file or full number, only that this seller is verified.</p>
+                </div>
+                <div class="dashboard-field-grid dashboard-field-grid-two">
+                    {% include "includes/form_field.html" with field=form.identity_document_type %}
+                    {% include "includes/form_field.html" with field=form.nin_number %}
+                    {% include "includes/form_field.html" with field=form.identity_document %}
+                </div>
+                <div class="dashboard-compliance-private-note">
+                    <span class="workspace-label">Private record</span>
+                    <p>{{ request.user.private_identity_summary }}</p>
+                </div>
+                {% if request.user.identity_document %}
+                    <div class="dashboard-inline-file">
+                        <span>Existing identity document</span>
+                        <a href="{{ request.user.identity_document.url }}" target="_blank" rel="noopener">Open current file</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-form-section">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Business trust</p>
+                    <h2>Optional CAC support</h2>
+                    <p>Business sellers can add CAC proof for stronger trust on larger-ticket listings.</p>
+                </div>
+                <div class="dashboard-field-grid dashboard-field-grid-two">
                     {% include "includes/form_field.html" with field=form.cac_certificate %}
                 </div>
                 {% if request.user.cac_certificate %}
                     <div class="dashboard-inline-file">
-                        <span class="workspace-label">Existing CAC document</span>
+                        <span>Existing CAC document</span>
                         <a href="{{ request.user.cac_certificate.url }}" target="_blank" rel="noopener">Open current file</a>
                     </div>
                 {% endif %}
@@ -58,7 +91,7 @@
 
             <section class="dashboard-form-section dashboard-form-section-support">
                 <div class="dashboard-section-intro">
-                    <p class="workspace-label">Verification signals</p>
+                    <p class="workspace-label">Verification status</p>
                     <h2>What is live right now</h2>
                     <p>These signals are already influencing how your seller profile reads across listings and transaction pages.</p>
                 </div>
@@ -66,7 +99,7 @@
                     {% for item in verification_items %}
                         <article class="dashboard-verification-card">
                             <div>
-                                <p class="workspace-label">Trust signal</p>
+                                <p class="workspace-label">Verification</p>
                                 <h3>{{ item.label }}</h3>
                                 <p>{{ item.description }}</p>
                             </div>

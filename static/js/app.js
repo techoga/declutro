@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const galleryLightboxVideo = document.querySelector("[data-gallery-lightbox-video]");
     const galleryLightboxOpen = document.querySelector("[data-gallery-lightbox-open]");
     const galleryThumbs = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
+    const galleryOpenTriggers = Array.from(document.querySelectorAll("[data-gallery-open-trigger]"));
 
     if (galleryThumbs.length && (galleryStageImage || galleryStageVideo)) {
         const mediaByIndex = new Map();
@@ -178,5 +179,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 openModal(galleryLightbox);
             });
         }
+
+        galleryOpenTriggers.forEach((trigger) => {
+            if (trigger.matches("[data-gallery-thumb]")) {
+                return;
+            }
+            trigger.addEventListener("click", () => {
+                if (!galleryLightbox) {
+                    return;
+                }
+                setActiveMedia(activeIndex);
+                openModal(galleryLightbox);
+            });
+        });
     }
 });

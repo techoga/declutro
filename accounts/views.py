@@ -629,19 +629,21 @@ def _seller_is_verified(seller):
 def _seller_trust_summary(user):
     level = user.trust_level
     next_step = {
-        "high": "Your seller profile already carries strong trust signals across identity, contact, and business details.",
-        "trusted": "One more strong signal, like identity or business documentation, will push this profile into high trust.",
-        "standard": "Complete one or two more trust signals so buyers can commit with less hesitation.",
-        "new": "Add stronger trust signals so buyers can move from browsing to payment with more confidence.",
+        "high": "This seller profile already combines private identity verification with strong contact or business context.",
+        "trusted": "This seller already looks verified. A little more context can still strengthen higher-ticket conversions.",
+        "standard": "Add private identity or business proof so buyers can move faster with less hesitation.",
+        "new": "Add a private NIN or government ID so buyers can see a verified seller profile.",
     }[level]
     return {
         "score": user.trust_score,
         "level": level,
         "level_label": user.trust_level_label,
+        "public_label": "Verified seller" if user.is_identity_verified else user.trust_level_label,
         "tone": user.trust_tone,
         "account_type_label": user.get_account_type_display(),
         "business_name": user.business_name,
         "social_handle": user.social_handle_display,
+        "identity_verified": user.is_identity_verified,
         "next_step": next_step,
     }
 
@@ -726,7 +728,7 @@ def _serialize_public_listing(listing):
         "image_url": listing.primary_image_url or _placeholder_image(listing.title),
         "detail_url": reverse("listing_detail", kwargs={"listing_id": listing.pk}),
         "badges": _listing_badges(listing),
-        "seller_signal": trust_summary["level_label"],
+        "seller_signal": trust_summary["public_label"],
         "seller_trust_tone": trust_summary["tone"],
         "action_label": "Buy now or make offer" if listing.is_negotiable else "Buy now available",
         "is_negotiable": listing.is_negotiable,
@@ -757,9 +759,10 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
             "primary_image_url": listing.primary_image_url or media_gallery[0]["poster_url"],
             "seller_name": listing.seller.display_name,
             "seller_initials": listing.seller.initials,
-            "seller_trust_label": trust_summary["level_label"],
+            "seller_trust_label": trust_summary["public_label"],
             "seller_trust_score": trust_summary["score"],
             "seller_trust_tone": trust_summary["tone"],
+            "seller_identity_verified": trust_summary["identity_verified"],
             "seller_social_handle": listing.seller.social_handle_display,
             "seller_account_type": listing.seller.get_account_type_display(),
             "is_negotiable": listing.is_negotiable,
@@ -773,7 +776,11 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
                 {"label": "Pricing", "value": "Offers enabled" if listing.is_negotiable else "Fixed-price listing"},
             ],
             "trust_items": [
-                {"label": "Seller trust", "value": f"{trust_summary['level_label']} · {trust_summary['score']}/100"},
+                {
+                    "label": "Identity",
+                    "value": "Verified privately" if trust_summary["identity_verified"] else "Not verified yet",
+                },
+                {"label": "Trust level", "value": f"{trust_summary['level_label']} · {trust_summary['score']}/100"},
                 {"label": "Account type", "value": listing.seller.get_account_type_display()},
                 {"label": "Social presence", "value": listing.seller.social_handle_display or "Not shared yet"},
                 {"label": "Checkout model", "value": "Protected reservation"},
@@ -1007,7 +1014,7 @@ def compliance_view(request):
                 page_eyebrow="Trust",
                 page_heading="Seller trust and compliance",
                 page_description=(
-                    "Surface the signals buyers rely on: contact readiness, social presence, and optional business documentation."
+                    "Store private identity proof, keep public seller details current, and surface a verified status without exposing raw documents."
                 ),
                 page_variant="form",
                 page_action={

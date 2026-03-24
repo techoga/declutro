@@ -308,6 +308,7 @@ def _build_verification_items(user):
     phone_verified = bool(user.phone_number and user.is_phone_verified)
     email_verified = bool(user.email and user.is_email_verified)
     identity_verified = bool(user.is_identity_verified)
+    identity_submitted = bool(user.has_identity_submission)
     has_social_handle = bool(user.social_handle_display)
     has_business_documents = bool(user.account_type == User.AccountType.BUSINESS and user.cac_certificate)
 
@@ -338,11 +339,15 @@ def _build_verification_items(user):
             "needs_action": False,
         },
         {
-            "label": "Identity verification",
-            "value": "Ready" if identity_verified else "Future-ready",
-            "tone": "success" if identity_verified else "neutral",
-            "description": "Reserved for higher-trust transactions and dispute handling.",
-            "needs_action": False,
+            "label": "Identity status",
+            "value": "Verified" if identity_verified else "Submitted" if identity_submitted else "Pending",
+            "tone": "success" if identity_verified else "info" if identity_submitted else "warning",
+            "description": (
+                f"{user.private_identity_summary} Buyers only see a verified badge, never the raw document."
+                if identity_verified or identity_submitted
+                else "Add a private NIN or upload a National ID, Voter's Card, or Driver's License."
+            ),
+            "needs_action": not identity_verified,
         },
         {
             "label": "Business trust",
@@ -376,9 +381,11 @@ def _build_trust_summary(user, verification_items):
         "tone": user.trust_tone,
         "verified_count": success_count,
         "summary": (
-            "Buyers can already see strong trust signals on this seller profile."
+            "Buyers already see a verified, high-trust seller profile."
             if user.trust_score >= 80
-            else "Complete a few more trust signals so payment decisions feel easier and faster."
+            else "Your profile is verified. Add more context if you want even stronger conversion on larger-ticket listings."
+            if user.is_identity_verified
+            else "Add a private NIN or government ID so buyers can see a verified seller status."
         ),
     }
 

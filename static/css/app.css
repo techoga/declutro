@@ -1625,6 +1625,10 @@ textarea.form-input {
     backdrop-filter: blur(8px);
 }
 
+.modal-backdrop[hidden] {
+    display: none !important;
+}
+
 .modal-card {
     width: min(100%, 520px);
     padding: 28px;

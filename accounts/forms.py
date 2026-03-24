@@ -306,7 +306,15 @@ class ProfileUpdateForm(StyledFormMixin, forms.ModelForm):
 class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = User
-        fields = ["account_type", "business_name", "social_handle", "cac_certificate"]
+        fields = [
+            "account_type",
+            "business_name",
+            "social_handle",
+            "identity_document_type",
+            "nin_number",
+            "identity_document",
+            "cac_certificate",
+        ]
         widgets = {
             "account_type": forms.Select(),
             "business_name": forms.TextInput(
@@ -321,6 +329,19 @@ class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
                     "autocomplete": "off",
                 }
             ),
+            "identity_document_type": forms.Select(),
+            "nin_number": forms.TextInput(
+                attrs={
+                    "placeholder": "12345678901",
+                    "autocomplete": "off",
+                    "inputmode": "numeric",
+                }
+            ),
+            "identity_document": forms.ClearableFileInput(
+                attrs={
+                    "accept": ".pdf,image/*",
+                }
+            ),
             "cac_certificate": forms.ClearableFileInput(
                 attrs={
                     "accept": ".pdf,image/*",
@@ -330,6 +351,9 @@ class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
         help_texts = {
             "business_name": "Only required if this account operates as a registered business.",
             "social_handle": "Optional. Helps buyers validate seller presence and continuity.",
+            "identity_document_type": "Choose the private identity proof you want on file for high-trust transactions.",
+            "nin_number": "Optional if you are uploading an ID card. Required if you choose NIN only.",
+            "identity_document": "Private upload only. Buyers never see the raw document; they only see that you are verified.",
             "cac_certificate": "Optional high-trust document for business sellers. PDF or image formats only.",
         }
 
@@ -341,6 +365,29 @@ class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
         if value.startswith("https://"):
             return value
         return value.lstrip("@")
+
+    def clean_nin_number(self):
+        digits = "".join(character for character in (self.cleaned_data.get("nin_number") or "") if character.isdigit())
+        if digits and len(digits) != 11:
+            raise ValidationError("NIN must contain exactly 11 digits.")
+        return digits
+
+    def clean_identity_document(self):
+        uploaded_file = self.cleaned_data.get("identity_document")
+        if not uploaded_file:
+            return uploaded_file
+
+        file_name = (uploaded_file.name or "").lower()
+        content_type = getattr(uploaded_file, "content_type", "") or ""
+        if (
+            content_type not in {"application/pdf"}
+            and not content_type.startswith("image/")
+            and not file_name.endswith(DOCUMENT_EXTENSIONS)
+        ):
+            raise ValidationError("Identity document must be a PDF or image file.")
+        if uploaded_file.size > 15 * 1024 * 1024:
+            raise ValidationError("Identity document must be 15MB or smaller.")
+        return uploaded_file
 
     def clean_cac_certificate(self):
         uploaded_file = self.cleaned_data.get("cac_certificate")
@@ -363,18 +410,52 @@ class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
         cleaned_data = super().clean()
         account_type = cleaned_data.get("account_type")
         business_name = cleaned_data.get("business_name")
+        identity_document_type = cleaned_data.get("identity_document_type") or ""
+        nin_number = cleaned_data.get("nin_number") or ""
+        identity_document = cleaned_data.get("identity_document")
         if account_type == User.AccountType.BUSINESS and not business_name:
             self.add_error("business_name", "Add the registered business name for a business account.")
+        if nin_number and not identity_document_type:
+            cleaned_data["identity_document_type"] = User.IdentityDocumentType.NIN
+            identity_document_type = User.IdentityDocumentType.NIN
+        if identity_document and not identity_document_type:
+            self.add_error("identity_document_type", "Select the document type for this upload.")
+        if identity_document_type == User.IdentityDocumentType.NIN and not nin_number:
+            self.add_error("nin_number", "Enter the NIN you want stored for private verification.")
+        if identity_document_type in {
+            User.IdentityDocumentType.NATIONAL_ID,
+            User.IdentityDocumentType.VOTERS_CARD,
+            User.IdentityDocumentType.DRIVERS_LICENSE,
+        } and not (identity_document or getattr(self.instance, "identity_document", None)):
+            self.add_error("identity_document", "Upload the selected ID document so we can mark this profile verified.")
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        identity_document = self.cleaned_data.get("identity_document")
         new_certificate = self.cleaned_data.get("cac_certificate")
+
+        if identity_document is False and self.instance.pk and self.instance.identity_document:
+            self.instance.identity_document.delete(save=False)
+            instance.identity_document = None
+        elif identity_document and self.instance.pk and self.instance.identity_document:
+            if self.instance.identity_document.name != identity_document.name:
+                self.instance.identity_document.delete(save=False)
+
+        if new_certificate is False and self.instance.pk and self.instance.cac_certificate:
+            self.instance.cac_certificate.delete(save=False)
+            instance.cac_certificate = None
         if new_certificate and self.instance.pk and self.instance.cac_certificate:
             if self.instance.cac_certificate.name != new_certificate.name:
                 self.instance.cac_certificate.delete(save=False)
+
         if instance.account_type != User.AccountType.BUSINESS:
             instance.business_name = ""
+        if instance.normalized_nin_number and not instance.identity_document_type:
+            instance.identity_document_type = User.IdentityDocumentType.NIN
+        if not instance.normalized_nin_number and not instance.identity_document:
+            instance.identity_document_type = ""
+        instance.is_identity_verified = bool(instance.normalized_nin_number or instance.identity_document)
         if commit:
             instance.save()
         return instance
