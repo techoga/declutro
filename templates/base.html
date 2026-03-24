@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% if page_title %}{{ page_title }} · {% endif %}Declutro{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% block extra_css %}{% endblock %}
     <script defer src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </head>
 <body class="{% block body_class %}app-body{% endblock %}">
     {% block body %}{% endblock %}

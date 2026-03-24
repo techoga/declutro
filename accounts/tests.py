@@ -207,6 +207,7 @@ class AuthFlowTests(TestCase):
         self.client.force_login(self.user)
         dashboard_response = self.client.get(reverse("dashboard_home"))
         self.assertContains(dashboard_response, "Action required")
+        self.assertContains(dashboard_response, "Workspace pulse")
         self.assertContains(dashboard_response, "Open transactions")
         self.assertContains(dashboard_response, "My listings")
         self.assertContains(dashboard_response, "Compliance and trust")
@@ -237,6 +238,124 @@ class AuthFlowTests(TestCase):
         self.assertRedirects(response, reverse("dashboard_listings"))
         self.assertTrue(Listing.objects.filter(seller=self.user, title="MacBook Air M2").exists())
         self.assertContains(response, "MacBook Air M2")
+
+
+@override_settings(
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+)
+class DashboardWorkspaceRenderTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            phone_number="+2348095555555",
+            email="workspace@declutro.com",
+            password="StrongPass123!",
+            name="Workspace Owner",
+        )
+        self.client.force_login(self.user)
+        self.listing = Listing.objects.create(
+            seller=self.user,
+            title="Sony WH-1000XM5",
+            category=Listing.Category.AUDIO,
+            price=Decimal("320000.00"),
+            condition=Listing.Condition.LIKE_NEW,
+            location="Lagos",
+            image_url="https://example.com/sony.jpg",
+            gallery_image_urls="",
+            is_negotiable=True,
+            status=Listing.Status.ACTIVE,
+            description="Clean condition with full accessories.",
+            defects="",
+        )
+
+    def test_dashboard_routes_render_new_workspace_shell(self):
+        routes = [
+            (reverse("dashboard_home"), "overview"),
+            (reverse("dashboard_transactions"), "section"),
+            (reverse("dashboard_listings"), "section"),
+            (reverse("dashboard_profile"), "form"),
+            (reverse("dashboard_update_password"), "form"),
+            (reverse("dashboard_sell_item"), "form"),
+            (reverse("dashboard_listing_edit", kwargs={"listing_id": self.listing.pk}), "form"),
+        ]
+
+        for url, page_variant in routes:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "css/dashboard.css")
+                self.assertContains(response, "js/dashboard.js")
+                self.assertContains(response, "data-dashboard-nav-toggle")
+                self.assertContains(response, "workspace-rail")
+                self.assertEqual(response.context["page_variant"], page_variant)
+                self.assertEqual(len(response.context["dashboard_nav_items"]), 5)
+
+    def test_listing_form_includes_preview_hooks(self):
+        response = self.client.get(reverse("dashboard_sell_item"))
+
+        self.assertContains(response, "data-dashboard-image-preview")
+        self.assertContains(response, "data-dashboard-image-placeholder")
+        self.assertContains(response, "data-dashboard-image-input")
+
+
+@override_settings(
+    PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
+)
+class PublicSurfaceRenderTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.seller = User.objects.create_user(
+            phone_number="+2348077777777",
+            email="publicseller@declutro.com",
+            password="StrongPass123!",
+            name="Public Seller",
+            is_email_verified=True,
+        )
+        self.listing = Listing.objects.create(
+            seller=self.seller,
+            title="iPad Air 5",
+            category=Listing.Category.TABLETS,
+            price=Decimal("610000.00"),
+            condition=Listing.Condition.LIKE_NEW,
+            location="Lagos",
+            image_url="https://example.com/ipad-air.jpg",
+            gallery_image_urls="",
+            is_negotiable=True,
+            status=Listing.Status.ACTIVE,
+            description="Barely used and still in excellent condition.",
+            defects="",
+        )
+
+    def test_public_routes_load_public_assets(self):
+        routes = [
+            reverse("home"),
+            reverse("listing_detail", kwargs={"listing_id": self.listing.pk}),
+            reverse("about_page"),
+            reverse("contact_page"),
+            reverse("privacy_page"),
+            reverse("terms_page"),
+            reverse("auth_login"),
+            reverse("auth_signup"),
+            reverse("auth_forgot_password"),
+        ]
+
+        for url in routes:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "css/public.css")
+                self.assertContains(response, "js/public.js")
+
+    def test_public_shell_context_and_listing_detail_metadata_render(self):
+        home_response = self.client.get(reverse("home"))
+        detail_response = self.client.get(reverse("listing_detail", kwargs={"listing_id": self.listing.pk}))
+
+        self.assertEqual(len(home_response.context["public_nav_items"]), 3)
+        self.assertTrue(home_response.context["public_show_search"])
+        self.assertContains(home_response, "data-public-nav-toggle")
+        self.assertEqual(len(detail_response.context["listing"]["summary_items"]), 4)
+        self.assertEqual(len(detail_response.context["listing"]["journey_steps"]), 3)
+        self.assertContains(detail_response, "product-seller-card")
 
 
 @override_settings(

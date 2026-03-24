@@ -1,17 +1,60 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block body_class %}app-body landing-body marketplace-body{% endblock %}
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/public.js' %}"></script>
+{% endblock %}
+
+{% block body_class %}app-body public-body marketplace-body{% endblock %}
 
 {% block body %}
     {% include "includes/public_header.html" %}
 
     <main class="public-shell">
         <div class="public-container">
-            <section class="info-page-card">
-                <p class="eyebrow">{{ page_data.eyebrow }}</p>
-                <h1>{{ page_data.headline }}</h1>
-                <p class="body-copy">{{ page_data.copy }}</p>
-                <div class="hero-actions">
+            <section class="public-page-hero">
+                <div class="public-page-hero-copy">
+                    <p class="public-kicker">{{ page_data.eyebrow }}</p>
+                    <h1>{{ page_data.headline }}</h1>
+                    <p>{{ page_data.copy }}</p>
+                </div>
+
+                <div class="public-page-hero-actions">
+                    <a href="{% url 'home' %}" class="btn btn-primary">Browse Listings</a>
+                    <a href="{{ sell_href }}" class="btn btn-secondary">Sell an Item</a>
+                </div>
+            </section>
+
+            <section class="public-info-grid">
+                <div class="public-info-copy-card">
+                    <p class="public-kicker">{{ page_data.eyebrow }}</p>
+                    <h2>{{ page_data.support_title }}</h2>
+                    <p>{{ page_data.support_copy }}</p>
+                </div>
+
+                <div class="public-info-facts">
+                    {% for fact in page_data.facts %}
+                        <article class="public-info-fact">
+                            <h3>{{ fact.title }}</h3>
+                            <p>{{ fact.copy }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="public-cta-band">
+                <div>
+                    <p class="public-kicker">Next step</p>
+                    <h2>Use the marketplace when you are ready to buy or list with more confidence.</h2>
+                </div>
+                <div class="public-cta-band-actions">
                     <a href="{% url 'home' %}" class="btn btn-primary">Browse Listings</a>
                     <a href="{{ sell_href }}" class="btn btn-secondary">Sell an Item</a>
                 </div>

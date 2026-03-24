@@ -1,35 +1,38 @@
-<section class="section-card" id="listings">
-    <div class="section-heading">
+<section class="dashboard-section" id="listings">
+    <div class="dashboard-section-heading">
         <div>
-            <p class="eyebrow">My listings</p>
+            <p class="dashboard-section-eyebrow">My listings</p>
             <h2>Your seller-side inventory</h2>
         </div>
         <a href="{% url 'dashboard_sell_item' %}" class="btn btn-secondary btn-compact">Add Listing</a>
     </div>
 
-    <div class="listing-columns">
+    <div class="dashboard-listing-board">
         {% for key, column in listing_columns.items %}
-            <div class="subsection-card">
-                <div class="subsection-heading">
+            <div class="dashboard-subsection">
+                <div class="dashboard-subsection-heading">
                     <h3>{{ column.title }}</h3>
-                    <span class="subsection-count">{{ column.items|length }}</span>
+                    <span class="dashboard-count-pill">{{ column.items|length }}</span>
                 </div>
 
-                <div class="stack-list">
+                <div class="dashboard-stack-list">
                     {% for listing in column.items %}
-                        <article class="listing-card" id="listing-{{ listing.id }}">
-                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="listing-image">
-                            <div class="listing-copy">
-                                <div class="listing-card-top">
+                        <article class="dashboard-listing-row" id="listing-{{ listing.id }}">
+                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="dashboard-listing-image">
+                            <div class="dashboard-listing-copy">
+                                <div class="dashboard-card-row">
                                     <div>
                                         <h4>{{ listing.title }}</h4>
-                                        <p class="meta-copy">{{ listing.offer_label }}</p>
+                                        <p class="dashboard-card-meta">{{ listing.offer_label }}</p>
                                     </div>
-                                    <span class="badge badge-{{ listing.status_tone }}">{{ listing.status_label }}</span>
+                                    <span class="dashboard-badge dashboard-badge-{{ listing.status_tone }}">{{ listing.status_label }}</span>
                                 </div>
-                                <strong class="listing-price">{{ listing.price_display }}</strong>
-                                <div class="card-actions">
-                                    <a href="{{ listing.detail_href }}" class="btn btn-secondary btn-compact">View Listing</a>
+                                <div class="dashboard-card-row dashboard-card-row-muted">
+                                    <strong>{{ listing.price_display }}</strong>
+                                    <span>{{ listing.offer_label }}</span>
+                                </div>
+                                <div class="dashboard-card-actions">
+                                    <a href="{{ listing.detail_href }}" class="btn btn-ghost btn-compact">Jump to row</a>
                                     <a href="{{ listing.edit_href }}" class="btn btn-secondary btn-compact">Edit Listing</a>
                                     {% if listing.can_deactivate and listing.deactivate_href %}
                                         <form method="post" action="{{ listing.deactivate_href }}">
@@ -41,7 +44,7 @@
                             </div>
                         </article>
                     {% empty %}
-                        <div class="empty-state empty-state-small">
+                        <div class="dashboard-empty-state dashboard-empty-state-small">
                             <h4>No items in {{ column.title|lower }}</h4>
                             <p>This column stays clean until you move listings into this state.</p>
                         </div>

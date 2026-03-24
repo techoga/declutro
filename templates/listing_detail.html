@@ -1,6 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block body_class %}app-body landing-body marketplace-body{% endblock %}
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/public.js' %}"></script>
+{% endblock %}
+
+{% block body_class %}app-body public-body marketplace-body{% endblock %}
 
 {% block body %}
     {% include "includes/public_header.html" %}
@@ -9,15 +21,15 @@
         <div class="public-container">
             {% include "includes/messages.html" %}
 
-            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+            <nav class="public-breadcrumb" aria-label="Breadcrumb">
                 <a href="{% url 'home' %}">Browse Listings</a>
                 <span>/</span>
                 <span>{{ listing.category_label }}</span>
             </nav>
 
-            <section class="detail-hero">
-                <div class="detail-gallery">
-                    <div class="detail-gallery-stage">
+            <section class="product-hero">
+                <div class="product-gallery-card">
+                    <div class="product-gallery-stage">
                         <img
                             src="{{ listing.primary_image_url }}"
                             alt="{{ listing.title }}"
@@ -25,11 +37,11 @@
                             data-gallery-stage
                         >
                     </div>
-                    <div class="detail-gallery-thumbs">
+                    <div class="product-gallery-thumbs">
                         {% for image in listing.gallery %}
                             <button
                                 type="button"
-                                class="gallery-thumb{% if forloop.first %} is-active{% endif %}"
+                                class="product-gallery-thumb{% if forloop.first %} is-active{% endif %}"
                                 data-gallery-thumb
                                 data-image-src="{{ image }}"
                                 aria-label="View image {{ forloop.counter }}"
@@ -40,32 +52,41 @@
                     </div>
                 </div>
 
-                <div class="detail-sidebar">
-                    <div class="detail-card">
+                <div class="product-rail">
+                    <article class="product-purchase-card">
                         {% if listing.badges %}
-                            <div class="detail-badges">
+                            <div class="product-badges">
                                 {% for badge in listing.badges %}
-                                    <span class="listing-badge">{{ badge }}</span>
+                                    <span class="public-listing-badge">{{ badge }}</span>
                                 {% endfor %}
                             </div>
                         {% endif %}
 
-                        <p class="eyebrow">{{ listing.category_label }}</p>
+                        <p class="public-kicker">{{ listing.category_label }}</p>
                         <h1>{{ listing.title }}</h1>
-                        <strong class="detail-price">{{ listing.price_display }}</strong>
+                        <p class="product-intro">
+                            Reserve it quickly with protected checkout{% if listing.is_negotiable %}, or make an offer if you want price flexibility{% endif %}.
+                        </p>
+                        <strong class="product-price">{{ listing.price_display }}</strong>
 
-                        <div class="detail-meta-grid">
+                        <div class="product-summary-grid">
+                            {% for item in listing.summary_items %}
+                                <div class="product-summary-item">
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.value }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="product-seller-card">
+                            <span class="product-seller-avatar">{{ listing.seller_initials }}</span>
                             <div>
-                                <span class="detail-meta-label">Condition</span>
-                                <strong>{{ listing.condition_label }}</strong>
-                            </div>
-                            <div>
-                                <span class="detail-meta-label">Location</span>
-                                <strong>{{ listing.location }}</strong>
+                                <p>{{ listing.seller_name }}</p>
+                                <span>{{ listing.seller_verification_label }}</span>
                             </div>
                         </div>
 
-                        <div class="detail-actions">
+                        <div class="product-actions">
                             {% if is_owner %}
                                 <a href="{{ listing.edit_url }}" class="btn btn-primary btn-block">Manage Listing</a>
                             {% elif request.user.is_authenticated %}
@@ -87,53 +108,47 @@
                         </div>
 
                         {% if not is_owner and not request.user.is_authenticated %}
-                            <p class="detail-auth-note">New here? <a href="{{ signup_href }}">Create an account</a> to reserve this item instantly.</p>
+                            <p class="product-auth-note">New here? <a href="{{ signup_href }}">Create an account</a> to reserve this item instantly.</p>
                         {% endif %}
-                    </div>
+                    </article>
 
-                    <div class="detail-card detail-card-muted">
-                        <p class="eyebrow">Trust + flow</p>
+                    <article class="product-trust-card">
+                        <p class="public-kicker">Trust + flow</p>
                         <h2>Pay now to reserve this item. Inspect before the seller gets paid.</h2>
-                        <div class="trust-grid">
-                            <div class="trust-row">
-                                <span>Seller status</span>
-                                <strong>{{ listing.seller_verification_label }}</strong>
-                            </div>
-                            <div class="trust-row">
-                                <span>Seller</span>
-                                <strong>{{ listing.seller_name }}</strong>
-                            </div>
-                            <div class="trust-row">
-                                <span>Location</span>
-                                <strong>{{ listing.location }}</strong>
-                            </div>
-                            <div class="trust-row">
-                                <span>Condition</span>
-                                <strong>{{ listing.condition_label }}</strong>
-                            </div>
-                            <div class="trust-row">
-                                <span>Defects</span>
-                                <strong>{% if listing.defects %}{{ listing.defects }}{% else %}No defects disclosed{% endif %}</strong>
-                            </div>
+                        <div class="product-trust-list">
+                            {% for item in listing.trust_items %}
+                                <div class="product-trust-row">
+                                    <span>{{ item.label }}</span>
+                                    <strong>{{ item.value }}</strong>
+                                </div>
+                            {% endfor %}
                         </div>
-                    </div>
+                    </article>
                 </div>
             </section>
 
-            <section class="detail-content-grid">
-                <article class="detail-section-card">
-                    <p class="eyebrow">Details</p>
+            <section class="product-detail-grid">
+                <article class="product-detail-card">
+                    <p class="public-kicker">Details</p>
                     <h2>What buyers need to know</h2>
                     <p>{{ listing.description }}</p>
                 </article>
 
-                <article class="detail-section-card">
-                    <p class="eyebrow">Action flow</p>
+                <article class="product-detail-card">
+                    <p class="public-kicker">Condition and disclosure</p>
+                    <h2>Clear product context</h2>
+                    <p><strong>Condition:</strong> {{ listing.condition_label }}</p>
+                    <p><strong>Location:</strong> {{ listing.location }}</p>
+                    <p><strong>Defects:</strong> {% if listing.defects %}{{ listing.defects }}{% else %}No defects disclosed{% endif %}</p>
+                </article>
+
+                <article class="product-detail-card">
+                    <p class="public-kicker">Action flow</p>
                     <h2>Fast, protected checkout</h2>
-                    <ol class="detail-flow-list">
-                        <li>Buy now to place the payment hold and reserve the item.</li>
-                        <li>Meet the seller and inspect the item before release.</li>
-                        <li>Confirm condition so the seller can be paid.</li>
+                    <ol class="public-flow-list">
+                        {% for step in listing.journey_steps %}
+                            <li>{{ step }}</li>
+                        {% endfor %}
                     </ol>
                 </article>
             </section>
@@ -141,20 +156,20 @@
     </main>
 
     {% if listing.is_negotiable and not is_owner and request.user.is_authenticated %}
-        <div class="modal-backdrop{% if offer_modal_open %} is-open{% endif %}" id="offer-modal"{% if not offer_modal_open %} hidden{% endif %}>
-            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
-                <div class="modal-header">
+        <div class="modal-backdrop public-modal-backdrop{% if offer_modal_open %} is-open{% endif %}" id="offer-modal"{% if not offer_modal_open %} hidden{% endif %}>
+            <div class="modal-card public-modal-card" role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
+                <div class="modal-header public-modal-header">
                     <div>
-                        <p class="eyebrow">Make offer</p>
+                        <p class="public-kicker">Make offer</p>
                         <h2 id="offer-modal-title">{{ listing.title }}</h2>
                     </div>
-                    <button type="button" class="modal-close" data-modal-close aria-label="Close offer form">×</button>
+                    <button type="button" class="modal-close public-modal-close" data-modal-close aria-label="Close offer form">×</button>
                 </div>
 
                 <form method="post" action="{{ listing.make_offer_url }}" data-loading-form>
                     {% csrf_token %}
                     {% include "includes/form_field.html" with field=offer_form.amount %}
-                    <div class="modal-actions">
+                    <div class="modal-actions public-modal-actions">
                         <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
                         <button type="submit" class="btn btn-primary" data-submit-button>
                             <span class="button-label">Send Offer</span>

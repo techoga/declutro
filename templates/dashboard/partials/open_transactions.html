@@ -1,35 +1,35 @@
-<section class="section-card" id="transactions">
-    <div class="section-heading">
+<section class="dashboard-section" id="transactions">
+    <div class="dashboard-section-heading">
         <div>
-            <p class="eyebrow">Open transactions</p>
+            <p class="dashboard-section-eyebrow">Open transactions</p>
             <h2>Active deals</h2>
         </div>
-        <span class="count-pill">{{ open_transactions_total }}</span>
+        <span class="dashboard-count-pill">{{ open_transactions_total }}</span>
     </div>
 
-    <div class="transaction-columns">
-        <div class="subsection-card">
-            <div class="subsection-heading">
+    <div class="dashboard-transaction-columns">
+        <div class="dashboard-subsection">
+            <div class="dashboard-subsection-heading">
                 <h3>Buying</h3>
-                <span class="subsection-count">{{ buying_transactions|length }}</span>
+                <span class="dashboard-count-pill">{{ buying_transactions|length }}</span>
             </div>
 
-            <div class="stack-list">
+            <div class="dashboard-stack-list">
                 {% for transaction in buying_transactions %}
-                    <article class="transaction-card" id="transaction-{{ transaction.id }}">
-                        <div class="transaction-card-top">
+                    <article class="dashboard-transaction-card" id="transaction-{{ transaction.id }}">
+                        <div class="dashboard-card-row">
                             <div>
                                 <h4>{{ transaction.item_name }}</h4>
-                                <p class="meta-copy">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
+                                <p class="dashboard-card-meta">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
                             </div>
-                            <span class="badge badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
+                            <span class="dashboard-badge dashboard-badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
                         </div>
-                        <div class="transaction-card-meta">
+                        <div class="dashboard-card-row dashboard-card-row-muted">
                             <strong>{{ transaction.price_display }}</strong>
                             <span>{{ transaction.meta_line }}</span>
                         </div>
-                        <p class="transaction-note">{{ transaction.next_step }}</p>
-                        <div class="card-actions">
+                        <p class="dashboard-card-copy">{{ transaction.next_step }}</p>
+                        <div class="dashboard-card-actions">
                             {% if transaction.cta_label != "View Details" %}
                                 {% if transaction.cta_kind == "form" and transaction.cta_action %}
                                     <form method="post" action="{{ transaction.cta_action }}">
@@ -46,7 +46,7 @@
                         </div>
                     </article>
                 {% empty %}
-                    <div class="empty-state empty-state-small">
+                    <div class="dashboard-empty-state dashboard-empty-state-small">
                         <h4>No active buying deals</h4>
                         <p>Offers and purchases you initiate will show up here with clear next steps.</p>
                     </div>
@@ -54,28 +54,28 @@
             </div>
         </div>
 
-        <div class="subsection-card">
-            <div class="subsection-heading">
+        <div class="dashboard-subsection">
+            <div class="dashboard-subsection-heading">
                 <h3>Selling</h3>
-                <span class="subsection-count">{{ selling_transactions|length }}</span>
+                <span class="dashboard-count-pill">{{ selling_transactions|length }}</span>
             </div>
 
-            <div class="stack-list">
+            <div class="dashboard-stack-list">
                 {% for transaction in selling_transactions %}
-                    <article class="transaction-card" id="transaction-{{ transaction.id }}">
-                        <div class="transaction-card-top">
+                    <article class="dashboard-transaction-card" id="transaction-{{ transaction.id }}">
+                        <div class="dashboard-card-row">
                             <div>
                                 <h4>{{ transaction.item_name }}</h4>
-                                <p class="meta-copy">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
+                                <p class="dashboard-card-meta">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
                             </div>
-                            <span class="badge badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
+                            <span class="dashboard-badge dashboard-badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
                         </div>
-                        <div class="transaction-card-meta">
+                        <div class="dashboard-card-row dashboard-card-row-muted">
                             <strong>{{ transaction.price_display }}</strong>
                             <span>{{ transaction.meta_line }}</span>
                         </div>
-                        <p class="transaction-note">{{ transaction.next_step }}</p>
-                        <div class="card-actions">
+                        <p class="dashboard-card-copy">{{ transaction.next_step }}</p>
+                        <div class="dashboard-card-actions">
                             {% if transaction.cta_label != "View Details" %}
                                 {% if transaction.cta_kind == "form" and transaction.cta_action %}
                                     <form method="post" action="{{ transaction.cta_action }}">
@@ -92,7 +92,7 @@
                         </div>
                     </article>
                 {% empty %}
-                    <div class="empty-state empty-state-small">
+                    <div class="dashboard-empty-state dashboard-empty-state-small">
                         <h4>No active selling deals</h4>
                         <p>Buyer responses, payment states, and meetup coordination will stay visible here.</p>
                     </div>

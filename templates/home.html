@@ -1,6 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block body_class %}app-body landing-body marketplace-body{% endblock %}
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/public.js' %}"></script>
+{% endblock %}
+
+{% block body_class %}app-body public-body marketplace-body{% endblock %}
 
 {% block body %}
     {% include "includes/public_header.html" %}
@@ -9,54 +21,78 @@
         <div class="public-container">
             {% include "includes/messages.html" %}
 
-            <section class="hero-panel">
-                <div class="hero-copy">
-                    <p class="eyebrow">Transaction-first resale</p>
-                    <h1>See it. Pay. Lock it.</h1>
-                    <p class="hero-subcopy">
-                        Secure high-demand items instantly. Pay now, inspect before seller gets paid.
+            <section class="public-hero">
+                <div class="public-hero-copy">
+                    <p class="public-kicker">Protected resale, with less marketplace noise</p>
+                    <h1>High-intent second-hand deals for people who want certainty.</h1>
+                    <p class="public-hero-subcopy">
+                        Reserve the item quickly, inspect it before seller funds are released, and move from
+                        discovery to decision without the usual endless back-and-forth.
                     </p>
-                    <div class="hero-actions">
+
+                    <div class="public-hero-actions">
                         <a href="#listings" class="btn btn-primary">Browse Listings</a>
                         <a href="{{ sell_href }}" class="btn btn-secondary">Sell an Item</a>
                     </div>
-                    <div class="hero-metrics">
-                        <div class="hero-metric">
-                            <strong>{{ listing_count }}</strong>
-                            <span>Live listings</span>
-                        </div>
-                        <div class="hero-metric">
-                            <strong>{{ verified_seller_count }}</strong>
-                            <span>Verified sellers</span>
-                        </div>
+
+                    <div class="public-promise-row">
+                        {% for promise in market_promises %}
+                            <span>{{ promise }}</span>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <aside class="hero-rail">
-                    <div class="hero-spotlight-card">
-                        <p class="hero-spotlight-label">How Declutro works</p>
-                        <ol class="hero-flow-list">
+                <aside class="public-hero-panel">
+                    <div class="public-panel-head">
+                        <div>
+                            <p class="public-kicker">Marketplace pulse</p>
+                            <h2>Built for fast, protected commitment</h2>
+                        </div>
+                        <span class="public-chip">{{ listing_count }} live</span>
+                    </div>
+
+                    <div class="public-stat-grid">
+                        {% for stat in market_stats %}
+                            <article class="public-stat-card">
+                                <span>{{ stat.label }}</span>
+                                <strong>{{ stat.value }}</strong>
+                                <p>{{ stat.caption }}</p>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    <div class="public-spotlight-card">
+                        <p class="public-spotlight-label">How it works</p>
+                        <ol class="public-flow-list">
                             <li>Spot the item and act fast.</li>
                             <li>Pay to reserve it before someone else does.</li>
                             <li>Inspect first. Seller gets paid after confirmation.</li>
                         </ol>
                     </div>
-                    <div class="hero-spotlight-card hero-spotlight-card-muted">
-                        <p class="hero-spotlight-label">Built for action</p>
-                        <strong>No endless browsing loops.</strong>
-                        <span>Every listing is designed to move you from interest to commitment quickly.</span>
-                    </div>
                 </aside>
             </section>
 
-            <section class="filter-panel" id="listings">
-                <div class="filter-panel-copy">
-                    <p class="eyebrow">Available now</p>
-                    <h2>Filter fast. Decide faster.</h2>
+            <section class="public-catalog-panel" id="listings">
+                <div class="public-catalog-head">
+                    <div class="public-catalog-copy">
+                        <p class="public-kicker">Available now</p>
+                        <h2>Filter fast. Decide faster.</h2>
+                        <p>Use tighter filters and cleaner listing cards to focus only on what is worth acting on.</p>
+                    </div>
+                    {% if selected_filters.q %}
+                        <div class="public-query-chip">
+                            <span>Search</span>
+                            <strong>{{ selected_filters.q }}</strong>
+                        </div>
+                    {% endif %}
                 </div>
 
-                <form method="get" class="filter-bar">
-                    <div class="filter-control">
+                <form method="get" class="public-filter-bar">
+                    {% if selected_filters.q %}
+                        <input type="hidden" name="q" value="{{ selected_filters.q }}">
+                    {% endif %}
+
+                    <div class="public-filter-control">
                         <label for="category">Category</label>
                         <select id="category" name="category">
                             <option value="">All categories</option>
@@ -66,7 +102,7 @@
                         </select>
                     </div>
 
-                    <div class="filter-control">
+                    <div class="public-filter-control">
                         <label for="location">Location</label>
                         <select id="location" name="location">
                             <option value="">All cities</option>
@@ -76,7 +112,7 @@
                         </select>
                     </div>
 
-                    <div class="filter-control">
+                    <div class="public-filter-control">
                         <label for="sort">Sort</label>
                         <select id="sort" name="sort">
                             {% for option in sort_options %}
@@ -85,51 +121,73 @@
                         </select>
                     </div>
 
-                    <label class="filter-toggle" for="negotiable">
+                    <label class="public-filter-toggle" for="negotiable">
                         <input id="negotiable" type="checkbox" name="negotiable" value="1"{% if selected_filters.negotiable %} checked{% endif %}>
                         <span>Negotiable only</span>
                     </label>
 
-                    <button type="submit" class="btn btn-primary filter-submit">Apply</button>
+                    <button type="submit" class="btn btn-primary public-filter-submit">Apply filters</button>
                 </form>
             </section>
 
             {% if listings %}
-                <section class="listing-grid" aria-label="Available listings">
+                <section class="public-listing-grid" aria-label="Available listings">
                     {% for listing in listings %}
-                        <a href="{{ listing.detail_url }}" class="listing-card">
-                            <div class="listing-card-media">
+                        <a href="{{ listing.detail_url }}" class="public-listing-card">
+                            <div class="public-listing-media">
                                 <img src="{{ listing.image_url }}" alt="{{ listing.title }}" loading="lazy">
                                 {% if listing.badges %}
-                                    <div class="listing-badges">
+                                    <div class="public-listing-badges">
                                         {% for badge in listing.badges %}
-                                            <span class="listing-badge">{{ badge }}</span>
+                                            <span class="public-listing-badge">{{ badge }}</span>
                                         {% endfor %}
                                     </div>
                                 {% endif %}
                             </div>
-                            <div class="listing-card-body">
-                                <div class="listing-card-copy">
-                                    <h3>{{ listing.title }}</h3>
-                                    <p>{{ listing.condition_label }}</p>
+
+                            <div class="public-listing-body">
+                                <div class="public-listing-head">
+                                    <div>
+                                        <p class="public-listing-category">{{ listing.category_label }}</p>
+                                        <h3>{{ listing.title }}</h3>
+                                    </div>
+                                    <strong class="public-listing-price">{{ listing.price_display }}</strong>
                                 </div>
-                                <strong class="listing-card-price">{{ listing.price_display }}</strong>
-                                <div class="listing-card-meta">
+
+                                <p class="public-listing-condition">{{ listing.condition_label }}</p>
+
+                                <div class="public-listing-meta">
                                     <span>{{ listing.location }}</span>
-                                    <span>Buy now or make offer</span>
+                                    <span>{{ listing.seller_signal }}</span>
+                                </div>
+
+                                <div class="public-listing-footer">
+                                    <span>{{ listing.action_label }}</span>
+                                    <span>Open listing</span>
                                 </div>
                             </div>
                         </a>
                     {% endfor %}
                 </section>
             {% else %}
-                <section class="empty-state empty-state-large">
-                    <p class="eyebrow">No live matches</p>
-                    <h2>No items found. Try adjusting filters.</h2>
-                    <p>Broaden your category or location selection, or list the item you want to sell instead.</p>
+                <section class="public-empty-state">
+                    <p class="public-kicker">No live matches</p>
+                    <h2>No items found. Try adjusting the filters.</h2>
+                    <p>Broaden the category or city, or list the item you want to sell instead.</p>
                     <a href="{{ sell_href }}" class="btn btn-primary">Sell an Item</a>
                 </section>
             {% endif %}
+
+            <section class="public-cta-band">
+                <div>
+                    <p class="public-kicker">For serious buyers and sellers</p>
+                    <h2>Move from discovery to protected checkout with less friction.</h2>
+                </div>
+                <div class="public-cta-band-actions">
+                    <a href="#listings" class="btn btn-primary">Browse Listings</a>
+                    <a href="{{ sell_href }}" class="btn btn-secondary">Sell an Item</a>
+                </div>
+            </section>
         </div>
     </main>
 

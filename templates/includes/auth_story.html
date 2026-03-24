@@ -1,0 +1,29 @@
+<section class="auth-story-panel">
+    <a href="{% url 'home' %}" class="auth-brand">
+        <span class="auth-brand-mark"></span>
+        <span>Declutro</span>
+    </a>
+
+    <div class="auth-story-copy">
+        <p class="public-kicker">{{ kicker }}</p>
+        <h1>{{ title }}</h1>
+        <p>{{ copy }}</p>
+    </div>
+
+    <div class="auth-story-points">
+        <article>
+            <strong>Protected payments</strong>
+            <span>High-intent transactions move without releasing seller funds too early.</span>
+        </article>
+        <article>
+            <strong>Inspection-first handoff</strong>
+            <span>Buyers confirm the item before the platform completes the release state.</span>
+        </article>
+        <article>
+            <strong>Cleaner resale flow</strong>
+            <span>Less noise, clearer listing context, and a stronger path from interest to commitment.</span>
+        </article>
+    </div>
+
+    <a href="{% url 'home' %}" class="auth-story-link">Browse live listings</a>
+</section>

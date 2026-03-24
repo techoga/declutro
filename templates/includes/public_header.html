@@ -1,27 +1,95 @@
-<header class="public-header">
-    <div class="public-container public-header-inner">
-        <a href="{% url 'home' %}" class="brand-lockup public-brand">
-            <span class="brand-mark"></span>
-            <span>Declutro</span>
-        </a>
+<header class="site-header" data-public-shell>
+    <div class="site-drawer-backdrop" data-public-nav-backdrop hidden></div>
 
-        <form method="get" action="{% url 'home' %}" class="public-search" role="search">
-            <label for="public-search-input" class="sr-only">Search listings</label>
-            <input
-                id="public-search-input"
-                type="search"
-                name="q"
-                value="{{ public_search_value|default:'' }}"
-                placeholder="Search phones, laptops, accessories"
+    <div class="public-container">
+        <div class="site-header-surface">
+            <a href="{% url 'home' %}" class="site-brand">
+                <span class="site-brand-mark"></span>
+                <span>Declutro</span>
+            </a>
+
+            <nav class="site-nav site-nav-desktop" aria-label="Primary">
+                {% for item in public_nav_items %}
+                    <a href="{{ item.href }}" class="site-nav-link{% if item.is_active %} is-active{% endif %}">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+
+            {% if public_show_search %}
+                <form method="get" action="{% url 'home' %}" class="site-search site-search-desktop" role="search">
+                    <label for="public-search-input-main" class="sr-only">Search listings</label>
+                    <input
+                        id="public-search-input-main"
+                        type="search"
+                        name="q"
+                        value="{{ public_search_value|default:'' }}"
+                        placeholder="Search phones, laptops, audio, accessories"
+                    >
+                </form>
+            {% endif %}
+
+            <div class="site-header-actions">
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'dashboard_home' %}" class="btn btn-secondary btn-compact">Dashboard</a>
+                    <a href="{% url 'dashboard_profile' %}" class="site-account-chip" aria-label="Open profile">{{ request.user.initials }}</a>
+                {% else %}
+                    <a href="{% url 'auth_login' %}" class="btn btn-secondary btn-compact">Login</a>
+                    <a href="{% url 'auth_signup' %}" class="btn btn-primary btn-compact">Create Account</a>
+                {% endif %}
+            </div>
+
+            <button
+                type="button"
+                class="site-menu-toggle"
+                data-public-nav-toggle
+                aria-controls="site-nav-panel"
+                aria-expanded="false"
+                aria-label="Open navigation"
             >
-        </form>
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
 
-        <div class="public-header-actions">
+    <div class="site-nav-panel" id="site-nav-panel" data-public-nav-panel>
+        <div class="site-nav-panel-head">
+            <a href="{% url 'home' %}" class="site-brand">
+                <span class="site-brand-mark"></span>
+                <span>Declutro</span>
+            </a>
+            <button type="button" class="site-menu-close" data-public-nav-close aria-label="Close navigation">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+
+        <nav class="site-nav-panel-links" aria-label="Mobile primary">
+            {% for item in public_nav_items %}
+                <a href="{{ item.href }}" class="site-nav-link{% if item.is_active %} is-active{% endif %}">{{ item.label }}</a>
+            {% endfor %}
+        </nav>
+
+        {% if public_show_search %}
+            <form method="get" action="{% url 'home' %}" class="site-search site-search-panel" role="search">
+                <label for="public-search-input-panel" class="sr-only">Search listings</label>
+                <input
+                    id="public-search-input-panel"
+                    type="search"
+                    name="q"
+                    value="{{ public_search_value|default:'' }}"
+                    placeholder="Search the marketplace"
+                >
+            </form>
+        {% endif %}
+
+        <div class="site-nav-panel-actions">
             {% if request.user.is_authenticated %}
-                <a href="{% url 'dashboard_profile' %}" class="avatar-chip" aria-label="Open profile">{{ request.user.initials }}</a>
+                <a href="{% url 'dashboard_home' %}" class="btn btn-secondary">Open dashboard</a>
+                <a href="{% url 'dashboard_profile' %}" class="btn btn-primary">Profile</a>
             {% else %}
-                <a href="{% url 'auth_login' %}" class="btn btn-secondary btn-compact">Login</a>
-                <a href="{% url 'auth_signup' %}" class="btn btn-primary btn-compact">Create Account</a>
+                <a href="{% url 'auth_login' %}" class="btn btn-secondary">Login</a>
+                <a href="{% url 'auth_signup' %}" class="btn btn-primary">Create Account</a>
             {% endif %}
         </div>
     </div>

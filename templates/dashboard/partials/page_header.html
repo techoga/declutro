@@ -1,0 +1,25 @@
+<section class="dashboard-page-header dashboard-page-header-{{ page_variant }}">
+    <div class="dashboard-page-header-copy">
+        <p class="dashboard-page-eyebrow">{{ page_eyebrow }}</p>
+        <h1>{{ page_heading }}</h1>
+        <p>{{ page_description }}</p>
+    </div>
+
+    <div class="dashboard-page-header-side">
+        {% if page_action %}
+            <a
+                href="{{ page_action.href }}"
+                class="btn {% if page_action.kind == 'primary' %}btn-primary{% elif page_action.kind == 'secondary' %}btn-secondary{% else %}btn-ghost{% endif %}"
+            >
+                {{ page_action.label }}
+            </a>
+        {% endif %}
+
+        {% if using_demo_data and page_variant != "form" %}
+            <div class="dashboard-preview-note">
+                <strong>Preview mode</strong>
+                <span>Sample data is displayed until your live transactions and listings start flowing.</span>
+            </div>
+        {% endif %}
+    </div>
+</section>

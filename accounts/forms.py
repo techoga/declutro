@@ -360,6 +360,7 @@ class ListingForm(StyledFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         status_field = self.fields["status"]
+        self.fields["image_url"].widget.attrs["data-dashboard-image-input"] = "true"
         allowed_choices = [
             choice for choice in status_field.choices if choice[0] in self.SELLER_EDITABLE_STATUSES
         ]

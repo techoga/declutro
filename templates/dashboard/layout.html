@@ -1,25 +1,134 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
 
 {% block body_class %}app-body dashboard-body{% endblock %}
 
 {% block body %}
-<div class="dashboard-shell">
-    <header class="dashboard-topbar">
-        <div class="dashboard-topbar-inner">
-            <a href="{% url 'home' %}" class="brand-lockup">
-                <span class="brand-mark"></span>
+<div class="workspace-shell" data-dashboard-shell>
+    <div class="workspace-backdrop" data-dashboard-nav-backdrop hidden></div>
+
+    <aside class="workspace-rail" id="dashboard-nav-panel" data-dashboard-nav-panel aria-label="Dashboard navigation">
+        <div class="workspace-rail-header">
+            <a href="{% url 'home' %}" class="workspace-brand">
+                <span class="workspace-brand-mark"></span>
                 <span>Declutro</span>
             </a>
+            <button
+                type="button"
+                class="workspace-menu-dismiss"
+                data-dashboard-nav-close
+                aria-label="Close navigation"
+            >
+                <span></span>
+                <span></span>
+            </button>
+        </div>
 
-            <div class="topbar-actions">
-                <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary btn-compact">Sell Item</a>
+        <div class="workspace-rail-body">
+            <section class="workspace-owner-card">
+                <p class="workspace-label">Workspace</p>
+                <h2>{{ request.user.display_name }}</h2>
+                <p>Calm, compact control over listings, transactions, and the next action that matters.</p>
+            </section>
+
+            <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary workspace-primary-cta">Sell Item</a>
+
+            <nav class="workspace-nav" aria-label="Primary">
+                {% for item in dashboard_nav_items %}
+                    <a href="{{ item.href }}" class="workspace-nav-link{% if item.is_active %} is-active{% endif %}">
+                        <span class="workspace-nav-icon" aria-hidden="true">
+                            {% if item.icon == "overview" %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                    <rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect>
+                                    <rect x="13.5" y="3.5" width="7" height="5" rx="2"></rect>
+                                    <rect x="13.5" y="11.5" width="7" height="9" rx="2"></rect>
+                                    <rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect>
+                                </svg>
+                            {% elif item.icon == "transactions" %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                    <path d="M4 7h16"></path>
+                                    <path d="M4 12h10"></path>
+                                    <path d="M4 17h7"></path>
+                                    <path d="M16.5 15.5 20 12l-3.5-3.5"></path>
+                                </svg>
+                            {% elif item.icon == "listings" %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                    <path d="M4 7.5h16"></path>
+                                    <path d="M4 12h16"></path>
+                                    <path d="M4 16.5h16"></path>
+                                    <circle cx="7" cy="7.5" r="1.2" fill="currentColor" stroke="none"></circle>
+                                    <circle cx="10" cy="12" r="1.2" fill="currentColor" stroke="none"></circle>
+                                    <circle cx="13" cy="16.5" r="1.2" fill="currentColor" stroke="none"></circle>
+                                </svg>
+                            {% elif item.icon == "profile" %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                    <circle cx="12" cy="8.2" r="3.4"></circle>
+                                    <path d="M5 19.2c1.6-3 4.1-4.5 7-4.5s5.4 1.5 7 4.5"></path>
+                                </svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                    <circle cx="12" cy="12" r="3.1"></circle>
+                                    <path d="m19.4 15 .6 1.1-1.5 2.5-1.3-.1a7.8 7.8 0 0 1-1.8 1l-.5 1.2h-2.9l-.5-1.2a7.8 7.8 0 0 1-1.8-1l-1.3.1-1.5-2.5.6-1.1a8.4 8.4 0 0 1 0-2l-.6-1.1 1.5-2.5 1.3.1a7.8 7.8 0 0 1 1.8-1l.5-1.2h2.9l.5 1.2a7.8 7.8 0 0 1 1.8 1l1.3-.1 1.5 2.5-.6 1.1a8.4 8.4 0 0 1 0 2Z"></path>
+                                </svg>
+                            {% endif %}
+                        </span>
+                        <span>{{ item.label }}</span>
+                    </a>
+                {% endfor %}
+            </nav>
+
+            <section class="workspace-rail-note">
+                <p class="workspace-label">Focus</p>
+                <p>Keep actions obvious, reduce visual noise, and make every state change feel intentional.</p>
+            </section>
+        </div>
+    </aside>
+
+    <div class="workspace-main-shell">
+        <header class="workspace-toolbar">
+            <div class="workspace-toolbar-leading">
+                <button
+                    type="button"
+                    class="workspace-menu-toggle"
+                    data-dashboard-nav-toggle
+                    aria-controls="dashboard-nav-panel"
+                    aria-expanded="false"
+                    aria-label="Open navigation"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <div class="workspace-toolbar-copy">
+                    <p class="workspace-toolbar-label">{{ page_eyebrow }}</p>
+                    <p class="workspace-toolbar-title">{{ page_title }}</p>
+                </div>
+            </div>
+
+            <div class="workspace-toolbar-actions">
                 <div class="dropdown" data-dropdown>
-                    <button type="button" class="avatar-button" data-dropdown-trigger aria-expanded="false">
+                    <button type="button" class="avatar-button workspace-account-trigger" data-dropdown-trigger aria-expanded="false">
                         <span class="avatar-circle">{{ request.user.initials }}</span>
                     </button>
-                    <div class="dropdown-menu" data-dropdown-menu hidden>
+                    <div class="dropdown-menu workspace-account-menu" data-dropdown-menu hidden>
+                        <div class="workspace-account-summary">
+                            <strong>{{ request.user.display_name }}</strong>
+                            <span>{{ request.user.phone_number }}</span>
+                        </div>
                         <a href="{% url 'dashboard_profile' %}" class="dropdown-link">View Profile</a>
-                        <a href="{% url 'dashboard_update_password' %}" class="dropdown-link">Update Password</a>
+                        <a href="{% url 'dashboard_update_password' %}" class="dropdown-link">Security</a>
                         <form method="post" action="{% url 'auth_logout' %}">
                             {% csrf_token %}
                             <button type="submit" class="dropdown-link dropdown-button">Logout</button>
@@ -27,32 +136,9 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <div class="dashboard-frame">
-        <aside class="dashboard-sidebar">
-            <div class="sidebar-panel">
-                <p class="eyebrow">Workspace</p>
-                <h2 class="sidebar-title">{{ request.user.display_name }}</h2>
-                <p class="sidebar-copy">One control center for everything you are buying, selling, and closing.</p>
-            </div>
-
-            <nav class="sidebar-nav" aria-label="Primary">
-                <a href="{% url 'dashboard_home' %}" class="sidebar-link{% if active_nav == 'dashboard' %} is-active{% endif %}">Dashboard</a>
-                <a href="{% url 'dashboard_transactions' %}" class="sidebar-link{% if active_nav == 'transactions' %} is-active{% endif %}">Transactions</a>
-                <a href="{% url 'dashboard_listings' %}" class="sidebar-link{% if active_nav == 'listings' %} is-active{% endif %}">Listings</a>
-                <a href="{% url 'dashboard_profile' %}" class="sidebar-link{% if active_nav == 'profile' %} is-active{% endif %}">Profile</a>
-                <a href="{% url 'dashboard_update_password' %}" class="sidebar-link{% if active_nav == 'settings' %} is-active{% endif %}">Settings</a>
-            </nav>
-
-            <div class="sidebar-panel sidebar-panel-muted">
-                <p class="eyebrow">Focus</p>
-                <p class="sidebar-copy">Action-first workflows, status clarity, and transaction completion over browsing.</p>
-            </div>
-        </aside>
-
-        <main class="dashboard-main">
+        <main class="workspace-main workspace-main-{{ page_variant }}">
             {% include "includes/messages.html" %}
             {% block dashboard_content %}{% endblock %}
         </main>

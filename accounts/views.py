@@ -78,6 +78,22 @@ PUBLIC_PAGES = {
             "inspect before the seller gets paid, and move from discovery to decision without the "
             "usual marketplace noise."
         ),
+        "support_title": "What makes the experience different",
+        "support_copy": "The product is designed around certainty, speed, and cleaner transaction handoffs.",
+        "facts": [
+            {
+                "title": "Protected reservation",
+                "copy": "Buyers can act fast without forcing the seller to rely on vague promises or endless chats.",
+            },
+            {
+                "title": "Inspection-first release",
+                "copy": "Funds stay protected until the buyer confirms the item matches what was listed.",
+            },
+            {
+                "title": "High-intent inventory",
+                "copy": "Listings are structured to move people from interest to commitment with less friction.",
+            },
+        ],
     },
     "contact": {
         "title": "Contact Declutro",
@@ -87,6 +103,22 @@ PUBLIC_PAGES = {
             "Reach the Declutro team at hello@declutro.com for support, seller onboarding, or "
             "trust and safety questions."
         ),
+        "support_title": "How support is organized",
+        "support_copy": "The team focuses on trust, seller readiness, and live transaction resolution.",
+        "facts": [
+            {
+                "title": "Trust and safety",
+                "copy": "Report suspicious behavior, listing issues, or anything that puts a transaction at risk.",
+            },
+            {
+                "title": "Seller onboarding",
+                "copy": "Get help preparing listings that are clearer, faster to trust, and easier to close.",
+            },
+            {
+                "title": "Live transaction help",
+                "copy": "If a handoff or protected payment step feels unclear, support can help you move forward.",
+            },
+        ],
     },
     "privacy": {
         "title": "Privacy Policy",
@@ -96,6 +128,22 @@ PUBLIC_PAGES = {
             "Declutro uses account, transaction, and verification data to secure payments, prevent "
             "fraud, and keep item handoffs traceable."
         ),
+        "support_title": "What the policy is designed to protect",
+        "support_copy": "Privacy on Declutro exists to support safer transactions, not to create unnecessary drag.",
+        "facts": [
+            {
+                "title": "Identity and account data",
+                "copy": "Contact and profile details help keep accounts recoverable and buyers or sellers identifiable.",
+            },
+            {
+                "title": "Payment and transaction data",
+                "copy": "Payment references and transaction states help prove what happened and when it happened.",
+            },
+            {
+                "title": "Operational notifications",
+                "copy": "Reset links, security prompts, and critical flow updates are used to keep accounts safe.",
+            },
+        ],
     },
     "terms": {
         "title": "Terms of Service",
@@ -105,8 +153,129 @@ PUBLIC_PAGES = {
             "Listings must be accurate, meetups must reflect the agreed handoff, and payment holds "
             "remain conditional until inspection is confirmed."
         ),
+        "support_title": "Principles behind the rules",
+        "support_copy": "The terms are built to keep listings accurate, payments protected, and handoffs accountable.",
+        "facts": [
+            {
+                "title": "Accurate listing information",
+                "copy": "Sellers must describe products honestly, including defects, so buyers can decide with confidence.",
+            },
+            {
+                "title": "Protected payment flow",
+                "copy": "Payment reservations are designed to secure the item without releasing funds too early.",
+            },
+            {
+                "title": "Confirmed completion",
+                "copy": "Transactions close only after the buyer verifies the handoff or the platform can resolve the state.",
+            },
+        ],
     },
 }
+
+PUBLIC_NAV_ITEMS = (
+    {
+        "key": "home",
+        "label": "Marketplace",
+        "href_name": "home",
+    },
+    {
+        "key": "about",
+        "label": "About",
+        "href_name": "about_page",
+    },
+    {
+        "key": "contact",
+        "label": "Support",
+        "href_name": "contact_page",
+    },
+)
+
+DASHBOARD_NAV_ITEMS = (
+    {
+        "key": "dashboard",
+        "label": "Overview",
+        "href_name": "dashboard_home",
+        "icon": "overview",
+    },
+    {
+        "key": "transactions",
+        "label": "Transactions",
+        "href_name": "dashboard_transactions",
+        "icon": "transactions",
+    },
+    {
+        "key": "listings",
+        "label": "Listings",
+        "href_name": "dashboard_listings",
+        "icon": "listings",
+    },
+    {
+        "key": "profile",
+        "label": "Profile",
+        "href_name": "dashboard_profile",
+        "icon": "profile",
+    },
+    {
+        "key": "settings",
+        "label": "Security",
+        "href_name": "dashboard_update_password",
+        "icon": "security",
+    },
+)
+
+
+def _public_shell_context(active_nav, *, public_search_value="", show_public_search=True):
+    nav_items = []
+    for item in PUBLIC_NAV_ITEMS:
+        nav_items.append(
+            {
+                "key": item["key"],
+                "label": item["label"],
+                "href": reverse(item["href_name"]),
+                "is_active": item["key"] == active_nav,
+            }
+        )
+
+    return {
+        "public_nav_items": nav_items,
+        "public_show_search": show_public_search,
+        "public_search_value": public_search_value,
+        "sell_href": reverse("dashboard_sell_item"),
+    }
+
+
+def _dashboard_shell_context(
+    active_nav,
+    *,
+    page_title,
+    page_eyebrow,
+    page_heading,
+    page_description,
+    page_variant="section",
+    page_action=None,
+):
+    nav_items = []
+    for item in DASHBOARD_NAV_ITEMS:
+        nav_items.append(
+            {
+                "key": item["key"],
+                "label": item["label"],
+                "href": reverse(item["href_name"]),
+                "icon": item["icon"],
+                "is_active": item["key"] == active_nav,
+            }
+        )
+
+    return {
+        "page_title": page_title,
+        "active_nav": active_nav,
+        "page_variant": page_variant,
+        "page_eyebrow": page_eyebrow,
+        "page_heading": page_heading,
+        "page_description": page_description,
+        "page_action": page_action,
+        "dashboard_nav_items": nav_items,
+    }
 
 
 def home_view(request):
@@ -144,6 +313,9 @@ def home_view(request):
         .count()
     )
 
+    active_listing_count = active_listings.count()
+    negotiable_listing_count = active_listings.filter(is_negotiable=True).count()
+
     return render(
         request,
         "home.html",
@@ -168,10 +340,31 @@ def home_view(request):
                 "sort": sort,
                 "negotiable": negotiable_only,
             },
-            "listing_count": active_listings.count(),
+            "listing_count": active_listing_count,
             "verified_seller_count": distinct_sellers,
-            "sell_href": reverse("dashboard_sell_item"),
-            "public_search_value": q,
+            "market_stats": [
+                {
+                    "value": active_listing_count,
+                    "label": "Live listings",
+                    "caption": "Fresh inventory ready for protected checkout.",
+                },
+                {
+                    "value": distinct_sellers,
+                    "label": "Verified sellers",
+                    "caption": "Seller signals that reduce uncertainty before you commit.",
+                },
+                {
+                    "value": negotiable_listing_count,
+                    "label": "Offer-enabled items",
+                    "caption": "Inventory that still leaves room for price flexibility.",
+                },
+            ],
+            "market_promises": [
+                "Reserve high-demand items with a protected payment hold.",
+                "Inspect before seller funds are released.",
+                "Use cleaner listing context to decide faster with less noise.",
+            ],
+            **_public_shell_context("home", public_search_value=q, show_public_search=True),
         },
     )
 
@@ -187,8 +380,11 @@ def info_page_view(request, slug):
         {
             "page_title": page["title"],
             "page_data": page,
-            "sell_href": reverse("dashboard_sell_item"),
-            "public_search_value": "",
+            **_public_shell_context(
+                "about" if slug == "about" else "contact" if slug == "contact" else "",
+                public_search_value="",
+                show_public_search=False,
+            ),
         },
     )
 
@@ -455,11 +651,15 @@ def _serialize_public_listing(listing):
         "id": listing.pk,
         "title": listing.title,
         "price_display": _format_money(listing.price),
+        "category_label": listing.get_category_display(),
         "condition_label": listing.get_condition_display(),
         "location": listing.location or "Location on request",
         "image_url": listing.primary_image_url or _placeholder_image(listing.title),
         "detail_url": reverse("listing_detail", kwargs={"listing_id": listing.pk}),
         "badges": _listing_badges(listing),
+        "seller_signal": "Verified seller" if _seller_is_verified(listing.seller) else "Verification pending",
+        "action_label": "Buy now or make offer" if listing.is_negotiable else "Buy now available",
+        "is_negotiable": listing.is_negotiable,
     }
 
 
@@ -490,14 +690,33 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
             "buy_now_url": reverse("buy_now", kwargs={"listing_id": listing.pk}),
             "make_offer_url": reverse("create_offer", kwargs={"listing_id": listing.pk}),
             "edit_url": reverse("dashboard_listing_edit", kwargs={"listing_id": listing.pk}) if listing.pk else "",
+            "summary_items": [
+                {"label": "Category", "value": listing.get_category_display()},
+                {"label": "Condition", "value": listing.get_condition_display()},
+                {"label": "Location", "value": listing.location or "Location on request"},
+                {"label": "Pricing", "value": "Offers enabled" if listing.is_negotiable else "Fixed-price listing"},
+            ],
+            "trust_items": [
+                {
+                    "label": "Seller status",
+                    "value": "Verified" if _seller_is_verified(listing.seller) else "Verification pending",
+                },
+                {"label": "Checkout model", "value": "Protected reservation"},
+                {"label": "Release rule", "value": "After buyer confirmation"},
+                {"label": "Defects", "value": listing.defects or "No defects disclosed"},
+            ],
+            "journey_steps": [
+                "Reserve the item by starting checkout before someone else does.",
+                "Inspect the item during the agreed handoff.",
+                "Confirm the item so seller funds can be released.",
+            ],
         },
         "is_owner": is_owner,
         "offer_form": offer_form,
         "offer_modal_open": offer_modal_open,
         "login_href": f"{reverse('auth_login')}?next={detail_url}",
         "signup_href": f"{reverse('auth_signup')}?next={detail_url}",
-        "sell_href": reverse("dashboard_sell_item"),
-        "public_search_value": "",
+        **_public_shell_context("home", public_search_value="", show_public_search=True),
     }
 
 
@@ -631,16 +850,22 @@ def dashboard_view(request):
     expire_stale_records()
     context = build_dashboard_context(request.user)
     context.update(
-        {
-            "page_title": "Dashboard",
-            "active_nav": "dashboard",
-            "page_eyebrow": "Transaction control center",
-            "page_heading": "Everything that needs attention is surfaced here.",
-            "page_description": (
-                "Move live deals forward, keep listings tidy, and handle both buying and selling "
-                "without switching contexts."
+        _dashboard_shell_context(
+            "dashboard",
+            page_title="Dashboard",
+            page_eyebrow="Control center",
+            page_heading="Move every live deal forward from one calm workspace.",
+            page_description=(
+                "Prioritize urgent actions, monitor buying and selling activity, and keep your "
+                "inventory transaction-ready without bouncing between screens."
             ),
-        }
+            page_variant="overview",
+            page_action={
+                "label": "Create listing",
+                "href": reverse("dashboard_sell_item"),
+                "kind": "primary",
+            },
+        )
     )
     return render(
         request,
@@ -663,8 +888,17 @@ def profile_view(request):
         "dashboard/profile.html",
         {
             "form": form,
-            "page_title": "Profile",
-            "active_nav": "profile",
+            **_dashboard_shell_context(
+                "profile",
+                page_title="Profile",
+                page_eyebrow="Account",
+                page_heading="Profile settings",
+                page_description=(
+                    "Keep your identity, recovery email, and sign-in number accurate so support, "
+                    "trust, and payouts keep moving without friction."
+                ),
+                page_variant="form",
+            ),
         },
     )
 
@@ -684,8 +918,16 @@ def update_password_view(request):
         "dashboard/update_password.html",
         {
             "form": form,
-            "page_title": "Update password",
-            "active_nav": "settings",
+            **_dashboard_shell_context(
+                "settings",
+                page_title="Update password",
+                page_eyebrow="Security",
+                page_heading="Password and access",
+                page_description=(
+                    "Refresh your password without interrupting the rest of your current session."
+                ),
+                page_variant="form",
+            ),
         },
     )
 
@@ -695,16 +937,17 @@ def transactions_view(request):
     expire_stale_records()
     context = build_dashboard_context(request.user)
     context.update(
-        {
-            "page_title": "Transactions",
-            "active_nav": "transactions",
-            "page_eyebrow": "Live transactions",
-            "page_heading": "Track every buying and selling deal from one surface.",
-            "page_description": (
-                "Open transactions stay status-driven and action-ready, while closed deals remain "
-                "available for trust, history, and support."
+        _dashboard_shell_context(
+            "transactions",
+            page_title="Transactions",
+            page_eyebrow="Live activity",
+            page_heading="Track every buying and selling deal with less noise.",
+            page_description=(
+                "Open transactions stay action-ready, while completed and cancelled history remains "
+                "easy to scan when you need context."
             ),
-        }
+            page_variant="section",
+        )
     )
     return render(request, "dashboard/transactions.html", context)
 
@@ -714,16 +957,17 @@ def listings_view(request):
     expire_stale_records()
     context = build_dashboard_context(request.user)
     context.update(
-        {
-            "page_title": "Listings",
-            "active_nav": "listings",
-            "page_eyebrow": "Listing control",
-            "page_heading": "Manage everything you are actively trying to sell.",
-            "page_description": (
-                "Keep active inventory sharp, review sold items for confidence, and move drafts into "
-                "market-ready shape quickly."
+        _dashboard_shell_context(
+            "listings",
+            page_title="Listings",
+            page_eyebrow="Seller workspace",
+            page_heading="Keep inventory sharp, visible, and ready to convert.",
+            page_description=(
+                "Review what is live, what is locked, what is sold, and what still needs attention "
+                "before it goes back into market."
             ),
-        }
+            page_variant="section",
+        )
     )
     return render(request, "dashboard/listings.html", context)
 
@@ -744,14 +988,18 @@ def sell_item_view(request):
         "dashboard/listing_form.html",
         {
             "form": form,
-            "page_title": "Sell item",
-            "active_nav": "listings",
-            "form_eyebrow": "Primary CTA",
-            "form_heading": "Create a transaction-ready listing",
-            "form_description": (
-                "Add the key details buyers need so offers and payment can happen without friction."
-            ),
             "submit_label": "Create listing",
+            **_dashboard_shell_context(
+                "listings",
+                page_title="Sell item",
+                page_eyebrow="Listing workspace",
+                page_heading="Create a transaction-ready listing",
+                page_description=(
+                    "Add the product details, pricing, and imagery buyers need so offers and "
+                    "payment can happen without extra back-and-forth."
+                ),
+                page_variant="form",
+            ),
         },
     )
 
@@ -772,12 +1020,18 @@ def edit_listing_view(request, listing_id):
         {
             "form": form,
             "listing": listing,
-            "page_title": "Edit listing",
-            "active_nav": "listings",
-            "form_eyebrow": "Listing update",
-            "form_heading": f"Edit {listing.title}",
-            "form_description": "Refine pricing, status, and notes without leaving the dashboard workflow.",
             "submit_label": "Save listing",
+            **_dashboard_shell_context(
+                "listings",
+                page_title="Edit listing",
+                page_eyebrow="Listing update",
+                page_heading=f"Edit {listing.title}",
+                page_description=(
+                    "Refine pricing, status, imagery, and notes without leaving the seller "
+                    "workspace."
+                ),
+                page_variant="form",
+            ),
         },
     )
 

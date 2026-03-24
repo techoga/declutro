@@ -1,33 +1,45 @@
-<footer class="public-footer">
-    <div class="public-container footer-grid">
-        <div class="footer-column footer-column-brand">
-            <a href="{% url 'home' %}" class="brand-lockup brand-lockup-inverse">
-                <span class="brand-mark"></span>
+<footer class="site-footer">
+    <div class="public-container site-footer-grid">
+        <div class="site-footer-brand">
+            <a href="{% url 'home' %}" class="site-brand site-brand-inverse">
+                <span class="site-brand-mark"></span>
                 <span>Declutro</span>
             </a>
-            <p>The fastest way to close second-hand deals.</p>
+            <p>Protected second-hand transactions for buyers and sellers who want clarity, speed, and less marketplace noise.</p>
+            <div class="site-footer-brand-actions">
+                <a href="{% url 'home' %}#listings" class="btn btn-secondary btn-compact">Browse Listings</a>
+                <a href="{{ sell_href|default:'#' }}" class="btn btn-primary btn-compact">Sell an Item</a>
+            </div>
         </div>
 
-        <div class="footer-column">
-            <h3>Product</h3>
-            <a href="{% url 'home' %}#listings">Browse Listings</a>
-            <a href="{{ sell_href|default:'#' }}">Sell an Item</a>
+        <div class="site-footer-column">
+            <h3>Navigate</h3>
+            {% for item in public_nav_items %}
+                <a href="{{ item.href }}">{{ item.label }}</a>
+            {% endfor %}
         </div>
 
-        <div class="footer-column">
-            <h3>Company</h3>
-            <a href="{% url 'about_page' %}">About</a>
-            <a href="{% url 'contact_page' %}">Contact</a>
+        <div class="site-footer-column">
+            <h3>Platform</h3>
+            <a href="{% url 'home' %}#listings">Marketplace</a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'dashboard_home' %}">Dashboard</a>
+            {% else %}
+                <a href="{% url 'auth_signup' %}">Create Account</a>
+            {% endif %}
+            <a href="{{ sell_href|default:'#' }}">Sell with Declutro</a>
         </div>
 
-        <div class="footer-column">
+        <div class="site-footer-column">
             <h3>Legal</h3>
             <a href="{% url 'privacy_page' %}">Privacy Policy</a>
             <a href="{% url 'terms_page' %}">Terms of Service</a>
+            <a href="{% url 'contact_page' %}">Contact</a>
         </div>
     </div>
 
-    <div class="public-container footer-bottom">
+    <div class="public-container site-footer-bottom">
         <p>© 2026 Declutro. All rights reserved.</p>
+        <span>Protected checkout. Inspection-first handoff. Cleaner resale decisions.</span>
     </div>
 </footer>

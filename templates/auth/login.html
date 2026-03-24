@@ -1,18 +1,33 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/public.js' %}"></script>
+{% endblock %}
 
 {% block body_class %}app-body auth-body{% endblock %}
 
 {% block body %}
-<main class="auth-shell">
-    <section class="auth-card auth-card-wide">
-        <div class="brand-badge">Declutro</div>
+<main class="auth-experience">
+    {% include "includes/auth_story.html" with kicker="Secure access" title="Welcome back" copy="Sign in with your phone number or email to get back into the Declutro workspace." %}
+
+    <section class="auth-form-panel">
         {% include "includes/messages.html" %}
-        <div class="auth-copy">
-            <p class="eyebrow">Secure access</p>
-            <h1>Welcome back</h1>
-            <p class="body-copy">Sign in with your phone number or email to access your Declutro dashboard.</p>
+
+        <div class="auth-panel-copy">
+            <p class="public-kicker">Login</p>
+            <h2>Sign in to your workspace</h2>
+            <p>Access listings, transactions, and account settings without losing context.</p>
         </div>
-        <form method="post" novalidate data-loading-form>
+
+        <form method="post" novalidate data-loading-form class="auth-form-stack">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
             {% if form.non_field_errors %}
@@ -24,14 +39,15 @@
             {% endif %}
             {% include "includes/form_field.html" with field=form.identifier %}
             {% include "includes/form_field.html" with field=form.password %}
-            <div class="form-row split-row">
+            <div class="auth-form-row auth-form-row-end">
                 <a href="{% url 'auth_forgot_password' %}" class="text-link">Forgot password?</a>
             </div>
             <button type="submit" class="btn btn-primary btn-block" data-submit-button>
                 <span class="button-label">Sign in</span>
             </button>
         </form>
-        <div class="auth-footer">
+
+        <div class="auth-panel-footer">
             <span>New to Declutro?</span>
             <a href="{% url 'auth_signup' %}" class="text-link strong-link">Create account</a>
         </div>

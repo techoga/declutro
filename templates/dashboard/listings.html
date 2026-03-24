@@ -1,20 +1,7 @@
 {% extends "dashboard/layout.html" %}
 
 {% block dashboard_content %}
-    <section class="page-intro">
-        <div>
-            <p class="eyebrow">{{ page_eyebrow }}</p>
-            <h1>{{ page_heading }}</h1>
-            <p class="body-copy">{{ page_description }}</p>
-        </div>
-        {% if using_demo_data %}
-            <div class="intro-note">
-                <strong>Preview mode</strong>
-                <span>Sample listing inventory is loaded here until you create your first real sell-side item.</span>
-            </div>
-        {% endif %}
-    </section>
-
+    {% include "dashboard/partials/page_header.html" %}
     {% include "dashboard/partials/listings.html" %}
     {% include "dashboard/partials/verification.html" %}
 {% endblock %}

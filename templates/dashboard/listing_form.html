@@ -1,16 +1,10 @@
 {% extends "dashboard/layout.html" %}
 
 {% block dashboard_content %}
-    <section class="page-intro page-intro-compact">
-        <div>
-            <p class="eyebrow">{{ form_eyebrow }}</p>
-            <h1>{{ form_heading }}</h1>
-            <p class="body-copy">{{ form_description }}</p>
-        </div>
-    </section>
+    {% include "dashboard/partials/page_header.html" %}
 
-    <section class="panel-card">
-        <form method="post" novalidate data-loading-form>
+    <section class="dashboard-form-card dashboard-form-card-wide">
+        <form method="post" novalidate data-loading-form class="dashboard-form dashboard-form-listing">
             {% csrf_token %}
             {% if form.non_field_errors %}
                 <div class="alert alert-error">
@@ -20,20 +14,99 @@
                 </div>
             {% endif %}
 
-            {% include "includes/form_field.html" with field=form.title %}
-            {% include "includes/form_field.html" with field=form.category %}
-            {% include "includes/form_field.html" with field=form.price %}
-            {% include "includes/form_field.html" with field=form.condition %}
-            {% include "includes/form_field.html" with field=form.location %}
-            {% include "includes/form_field.html" with field=form.image_url %}
-            {% include "includes/form_field.html" with field=form.gallery_image_urls %}
-            {% include "includes/form_field.html" with field=form.is_negotiable %}
-            {% include "includes/form_field.html" with field=form.status %}
-            {% include "includes/form_field.html" with field=form.description %}
-            {% include "includes/form_field.html" with field=form.defects %}
+            <div class="dashboard-form-layout">
+                <div class="dashboard-form-main">
+                    <section class="dashboard-form-section">
+                        <div class="dashboard-section-intro">
+                            <p class="workspace-label">Basics</p>
+                            <h2>What are you selling?</h2>
+                            <p>Use clear naming and accurate condition details so buyers can decide faster.</p>
+                        </div>
+                        <div class="dashboard-field-grid dashboard-field-grid-two">
+                            {% include "includes/form_field.html" with field=form.title %}
+                            {% include "includes/form_field.html" with field=form.category %}
+                            {% include "includes/form_field.html" with field=form.condition %}
+                            {% include "includes/form_field.html" with field=form.location %}
+                        </div>
+                    </section>
 
-            <div class="panel-actions">
-                <a href="{% url 'dashboard_listings' %}" class="btn btn-secondary">Back</a>
+                    <section class="dashboard-form-section">
+                        <div class="dashboard-section-intro">
+                            <p class="workspace-label">Pricing and availability</p>
+                            <h2>Set market-ready terms</h2>
+                            <p>Choose pricing and status settings that match how quickly you want to close the deal.</p>
+                        </div>
+                        <div class="dashboard-field-grid dashboard-field-grid-two">
+                            {% include "includes/form_field.html" with field=form.price %}
+                            {% include "includes/form_field.html" with field=form.status %}
+                            {% include "includes/form_field.html" with field=form.is_negotiable %}
+                        </div>
+                    </section>
+
+                    <section class="dashboard-form-section">
+                        <div class="dashboard-section-intro">
+                            <p class="workspace-label">Media</p>
+                            <h2>Lead with a strong cover image</h2>
+                            <p>Use clean image URLs so the listing looks credible on first impression.</p>
+                        </div>
+                        <div class="dashboard-field-grid">
+                            {% include "includes/form_field.html" with field=form.image_url %}
+                            {% include "includes/form_field.html" with field=form.gallery_image_urls %}
+                        </div>
+                    </section>
+
+                    <section class="dashboard-form-section">
+                        <div class="dashboard-section-intro">
+                            <p class="workspace-label">Description</p>
+                            <h2>Add buyer context</h2>
+                            <p>Be explicit about condition, included accessories, and anything that could affect the handoff.</p>
+                        </div>
+                        <div class="dashboard-field-grid">
+                            {% include "includes/form_field.html" with field=form.description %}
+                            {% include "includes/form_field.html" with field=form.defects %}
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="dashboard-form-sidebar">
+                    <section class="dashboard-preview-card">
+                        <div class="dashboard-section-intro">
+                            <p class="workspace-label">Live preview</p>
+                            <h2>Primary image</h2>
+                            <p>Paste a valid main image URL to preview how the listing cover will feel.</p>
+                        </div>
+                        <div class="dashboard-preview-frame">
+                            <img
+                                src="{{ form.image_url.value|default:'' }}"
+                                alt="Listing preview"
+                                class="dashboard-preview-image"
+                                data-dashboard-image-preview
+                                {% if not form.image_url.value %}hidden{% endif %}
+                            >
+                            <div
+                                class="dashboard-preview-placeholder"
+                                data-dashboard-image-placeholder
+                                {% if form.image_url.value %}hidden{% endif %}
+                            >
+                                A clean image preview will appear here.
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="dashboard-side-panel dashboard-side-panel-compact">
+                        <p class="workspace-label">Quality checklist</p>
+                        <h2>Before you publish</h2>
+                        <div class="dashboard-side-points">
+                            <span>Use the exact product name buyers are likely to search for.</span>
+                            <span>Keep the price numeric and realistic for the stated condition.</span>
+                            <span>Call out defects clearly so the meetup stays smooth.</span>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+
+            <div class="dashboard-form-actions dashboard-form-actions-sticky">
+                <a href="{% url 'dashboard_listings' %}" class="btn btn-ghost">Back</a>
                 <button type="submit" class="btn btn-primary" data-submit-button>
                     <span class="button-label">{{ submit_label }}</span>
                 </button>

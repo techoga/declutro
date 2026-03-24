@@ -1,22 +1,22 @@
-<section class="section-card section-card-highlight" id="action-required">
-    <div class="section-heading">
+<section class="dashboard-section dashboard-section-highlight" id="action-required">
+    <div class="dashboard-section-heading">
         <div>
-            <p class="eyebrow">Action required</p>
+            <p class="dashboard-section-eyebrow">Action required</p>
             <h2>Handle these first</h2>
         </div>
-        <span class="count-pill">{{ action_items|length }} live</span>
+        <span class="dashboard-count-pill">{{ action_items|length }} live</span>
     </div>
 
-    <div class="action-grid">
+    <div class="dashboard-action-grid">
         {% for item in action_items %}
-            <article class="action-card action-card-{{ item.tone }}">
-                <div class="action-card-copy">
-                    <p class="action-card-title">{{ item.title }}</p>
-                    <p class="action-card-description">{{ item.description }}</p>
+            <article class="dashboard-action-card dashboard-tone-{{ item.tone }}">
+                <div class="dashboard-action-card-head">
+                    <p class="dashboard-card-title">{{ item.title }}</p>
+                    <span class="dashboard-badge dashboard-badge-{{ item.tone }}">{{ item.status }}</span>
                 </div>
-                <div class="action-card-footer">
-                    <span class="badge badge-{{ item.tone }}">{{ item.status }}</span>
-                    <div class="card-actions">
+                <p class="dashboard-card-copy">{{ item.description }}</p>
+                <div class="dashboard-card-actions">
+                    <div class="dashboard-card-actions-primary">
                         {% if item.cta_kind == "form" and item.cta_action %}
                             <form method="post" action="{{ item.cta_action }}">
                                 {% csrf_token %}
@@ -40,7 +40,7 @@
                 </div>
             </article>
         {% empty %}
-            <div class="empty-state">
+            <div class="dashboard-empty-state">
                 <h3>No pending actions</h3>
                 <p>All current transactions are moving without anything blocking you right now.</p>
             </div>

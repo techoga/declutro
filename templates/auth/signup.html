@@ -1,18 +1,33 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/public.js' %}"></script>
+{% endblock %}
 
 {% block body_class %}app-body auth-body{% endblock %}
 
 {% block body %}
-<main class="auth-shell">
-    <section class="auth-card auth-card-wide">
-        <div class="brand-badge">Declutro</div>
+<main class="auth-experience">
+    {% include "includes/auth_story.html" with kicker="Premium onboarding" title="Create your account" copy="Start with a verified phone number, add a recovery email, and enter the marketplace with a cleaner resale workflow." %}
+
+    <section class="auth-form-panel">
         {% include "includes/messages.html" %}
-        <div class="auth-copy">
-            <p class="eyebrow">Premium onboarding</p>
-            <h1>Create your account</h1>
-            <p class="body-copy">Use a verified phone number as your primary sign-in and add an email for recovery.</p>
+
+        <div class="auth-panel-copy">
+            <p class="public-kicker">Create account</p>
+            <h2>Set up secure access</h2>
+            <p>Use details you actively monitor so resets, notifications, and transaction updates stay reliable.</p>
         </div>
-        <form method="post" novalidate data-loading-form>
+
+        <form method="post" novalidate data-loading-form class="auth-form-stack">
             {% csrf_token %}
             {% if form.non_field_errors %}
                 <div class="alert alert-error">
@@ -29,7 +44,8 @@
                 <span class="button-label">Create account</span>
             </button>
         </form>
-        <div class="auth-footer">
+
+        <div class="auth-panel-footer">
             <span>Already have access?</span>
             <a href="{% url 'auth_login' %}" class="text-link strong-link">Sign in</a>
         </div>
