@@ -1,0 +1,33 @@
+{% extends "dashboard/layout.html" %}
+
+{% block dashboard_content %}
+    <section class="page-intro">
+        <div>
+            <p class="eyebrow">{{ page_eyebrow }}</p>
+            <h1>{{ page_heading }}</h1>
+            <p class="body-copy">{{ page_description }}</p>
+        </div>
+        {% if using_demo_data %}
+            <div class="intro-note">
+                <strong>Preview mode</strong>
+                <span>Sample transactions are shown until your live buying and selling activity starts.</span>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="metric-grid" aria-label="Dashboard summary">
+        {% for metric in dashboard_metrics %}
+            <article class="metric-card">
+                <p>{{ metric.label }}</p>
+                <strong>{{ metric.value }}</strong>
+                <span>{{ metric.caption }}</span>
+            </article>
+        {% endfor %}
+    </section>
+
+    {% include "dashboard/partials/action_required.html" %}
+    {% include "dashboard/partials/open_transactions.html" %}
+    {% include "dashboard/partials/closed_transactions.html" %}
+    {% include "dashboard/partials/listings.html" %}
+    {% include "dashboard/partials/verification.html" %}
+{% endblock %}

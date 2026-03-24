@@ -1,0 +1,28 @@
+<header class="public-header">
+    <div class="public-container public-header-inner">
+        <a href="{% url 'home' %}" class="brand-lockup public-brand">
+            <span class="brand-mark"></span>
+            <span>Declutro</span>
+        </a>
+
+        <form method="get" action="{% url 'home' %}" class="public-search" role="search">
+            <label for="public-search-input" class="sr-only">Search listings</label>
+            <input
+                id="public-search-input"
+                type="search"
+                name="q"
+                value="{{ public_search_value|default:'' }}"
+                placeholder="Search phones, laptops, accessories"
+            >
+        </form>
+
+        <div class="public-header-actions">
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'dashboard_profile' %}" class="avatar-chip" aria-label="Open profile">{{ request.user.initials }}</a>
+            {% else %}
+                <a href="{% url 'auth_login' %}" class="btn btn-secondary btn-compact">Login</a>
+                <a href="{% url 'auth_signup' %}" class="btn btn-primary btn-compact">Create Account</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

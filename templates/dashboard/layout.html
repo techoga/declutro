@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block body_class %}app-body dashboard-body{% endblock %}
+
+{% block body %}
+<div class="dashboard-shell">
+    <header class="dashboard-topbar">
+        <div class="dashboard-topbar-inner">
+            <a href="{% url 'home' %}" class="brand-lockup">
+                <span class="brand-mark"></span>
+                <span>Declutro</span>
+            </a>
+
+            <div class="topbar-actions">
+                <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary btn-compact">Sell Item</a>
+                <div class="dropdown" data-dropdown>
+                    <button type="button" class="avatar-button" data-dropdown-trigger aria-expanded="false">
+                        <span class="avatar-circle">{{ request.user.initials }}</span>
+                    </button>
+                    <div class="dropdown-menu" data-dropdown-menu hidden>
+                        <a href="{% url 'dashboard_profile' %}" class="dropdown-link">View Profile</a>
+                        <a href="{% url 'dashboard_update_password' %}" class="dropdown-link">Update Password</a>
+                        <form method="post" action="{% url 'auth_logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-link dropdown-button">Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-frame">
+        <aside class="dashboard-sidebar">
+            <div class="sidebar-panel">
+                <p class="eyebrow">Workspace</p>
+                <h2 class="sidebar-title">{{ request.user.display_name }}</h2>
+                <p class="sidebar-copy">One control center for everything you are buying, selling, and closing.</p>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Primary">
+                <a href="{% url 'dashboard_home' %}" class="sidebar-link{% if active_nav == 'dashboard' %} is-active{% endif %}">Dashboard</a>
+                <a href="{% url 'dashboard_transactions' %}" class="sidebar-link{% if active_nav == 'transactions' %} is-active{% endif %}">Transactions</a>
+                <a href="{% url 'dashboard_listings' %}" class="sidebar-link{% if active_nav == 'listings' %} is-active{% endif %}">Listings</a>
+                <a href="{% url 'dashboard_profile' %}" class="sidebar-link{% if active_nav == 'profile' %} is-active{% endif %}">Profile</a>
+                <a href="{% url 'dashboard_update_password' %}" class="sidebar-link{% if active_nav == 'settings' %} is-active{% endif %}">Settings</a>
+            </nav>
+
+            <div class="sidebar-panel sidebar-panel-muted">
+                <p class="eyebrow">Focus</p>
+                <p class="sidebar-copy">Action-first workflows, status clarity, and transaction completion over browsing.</p>
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+            {% include "includes/messages.html" %}
+            {% block dashboard_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

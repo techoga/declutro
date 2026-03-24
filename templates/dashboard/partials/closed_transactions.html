@@ -1,0 +1,29 @@
+<section class="section-card" id="closed-transactions">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Closed transactions</p>
+            <h2>Completed, cancelled, and disputed</h2>
+        </div>
+        <span class="count-pill">{{ closed_transactions|length }}</span>
+    </div>
+
+    <div class="history-list">
+        {% for transaction in closed_transactions %}
+            <article class="history-row">
+                <div class="history-row-copy">
+                    <h3>{{ transaction.item_name }}</h3>
+                    <p>{{ transaction.date_label }}</p>
+                </div>
+                <div class="history-row-meta">
+                    <span class="badge badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
+                    <strong>{{ transaction.price_display }}</strong>
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-state empty-state-small">
+                <h3>No closed transactions yet</h3>
+                <p>Completed and cancelled deals will stay archived here for trust and support history.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>

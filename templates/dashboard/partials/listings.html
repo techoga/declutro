@@ -1,0 +1,53 @@
+<section class="section-card" id="listings">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">My listings</p>
+            <h2>Your seller-side inventory</h2>
+        </div>
+        <a href="{% url 'dashboard_sell_item' %}" class="btn btn-secondary btn-compact">Add Listing</a>
+    </div>
+
+    <div class="listing-columns">
+        {% for key, column in listing_columns.items %}
+            <div class="subsection-card">
+                <div class="subsection-heading">
+                    <h3>{{ column.title }}</h3>
+                    <span class="subsection-count">{{ column.items|length }}</span>
+                </div>
+
+                <div class="stack-list">
+                    {% for listing in column.items %}
+                        <article class="listing-card" id="listing-{{ listing.id }}">
+                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="listing-image">
+                            <div class="listing-copy">
+                                <div class="listing-card-top">
+                                    <div>
+                                        <h4>{{ listing.title }}</h4>
+                                        <p class="meta-copy">{{ listing.offer_label }}</p>
+                                    </div>
+                                    <span class="badge badge-{{ listing.status_tone }}">{{ listing.status_label }}</span>
+                                </div>
+                                <strong class="listing-price">{{ listing.price_display }}</strong>
+                                <div class="card-actions">
+                                    <a href="{{ listing.detail_href }}" class="btn btn-secondary btn-compact">View Listing</a>
+                                    <a href="{{ listing.edit_href }}" class="btn btn-secondary btn-compact">Edit Listing</a>
+                                    {% if listing.can_deactivate and listing.deactivate_href %}
+                                        <form method="post" action="{{ listing.deactivate_href }}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-ghost btn-compact">Deactivate</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="empty-state empty-state-small">
+                            <h4>No items in {{ column.title|lower }}</h4>
+                            <p>This column stays clean until you move listings into this state.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

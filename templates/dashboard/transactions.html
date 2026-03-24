@@ -1,0 +1,21 @@
+{% extends "dashboard/layout.html" %}
+
+{% block dashboard_content %}
+    <section class="page-intro">
+        <div>
+            <p class="eyebrow">{{ page_eyebrow }}</p>
+            <h1>{{ page_heading }}</h1>
+            <p class="body-copy">{{ page_description }}</p>
+        </div>
+        {% if using_demo_data %}
+            <div class="intro-note">
+                <strong>Preview mode</strong>
+                <span>These transaction states are seeded so the UI stays testable before live deals exist.</span>
+            </div>
+        {% endif %}
+    </section>
+
+    {% include "dashboard/partials/action_required.html" %}
+    {% include "dashboard/partials/open_transactions.html" %}
+    {% include "dashboard/partials/closed_transactions.html" %}
+{% endblock %}

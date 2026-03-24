@@ -1,0 +1,49 @@
+<section class="section-card section-card-highlight" id="action-required">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Action required</p>
+            <h2>Handle these first</h2>
+        </div>
+        <span class="count-pill">{{ action_items|length }} live</span>
+    </div>
+
+    <div class="action-grid">
+        {% for item in action_items %}
+            <article class="action-card action-card-{{ item.tone }}">
+                <div class="action-card-copy">
+                    <p class="action-card-title">{{ item.title }}</p>
+                    <p class="action-card-description">{{ item.description }}</p>
+                </div>
+                <div class="action-card-footer">
+                    <span class="badge badge-{{ item.tone }}">{{ item.status }}</span>
+                    <div class="card-actions">
+                        {% if item.cta_kind == "form" and item.cta_action %}
+                            <form method="post" action="{{ item.cta_action }}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-compact">{{ item.cta_label }}</button>
+                            </form>
+                        {% else %}
+                            <a href="{{ item.cta_href }}" class="btn btn-primary btn-compact">{{ item.cta_label }}</a>
+                        {% endif %}
+
+                        {% if item.secondary_cta_label %}
+                            {% if item.secondary_cta_kind == "form" and item.secondary_cta_action %}
+                                <form method="post" action="{{ item.secondary_cta_action }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-ghost btn-compact">{{ item.secondary_cta_label }}</button>
+                                </form>
+                            {% else %}
+                                <a href="{{ item.secondary_cta_href }}" class="btn btn-ghost btn-compact">{{ item.secondary_cta_label }}</a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-state">
+                <h3>No pending actions</h3>
+                <p>All current transactions are moving without anything blocking you right now.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>

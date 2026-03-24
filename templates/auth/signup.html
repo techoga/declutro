@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block body_class %}app-body auth-body{% endblock %}
+
+{% block body %}
+<main class="auth-shell">
+    <section class="auth-card auth-card-wide">
+        <div class="brand-badge">Declutro</div>
+        {% include "includes/messages.html" %}
+        <div class="auth-copy">
+            <p class="eyebrow">Premium onboarding</p>
+            <h1>Create your account</h1>
+            <p class="body-copy">Use a verified phone number as your primary sign-in and add an email for recovery.</p>
+        </div>
+        <form method="post" novalidate data-loading-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% include "includes/form_field.html" with field=form.phone_number %}
+            {% include "includes/form_field.html" with field=form.email %}
+            {% include "includes/form_field.html" with field=form.password1 %}
+            {% include "includes/form_field.html" with field=form.password2 %}
+            <button type="submit" class="btn btn-primary btn-block" data-submit-button>
+                <span class="button-label">Create account</span>
+            </button>
+        </form>
+        <div class="auth-footer">
+            <span>Already have access?</span>
+            <a href="{% url 'auth_login' %}" class="text-link strong-link">Sign in</a>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,26 @@
+<section class="section-card section-card-compact" id="verification">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Verification</p>
+            <h2>Compliance and trust</h2>
+        </div>
+    </div>
+
+    <div class="verification-list">
+        {% for item in verification_items %}
+            <article class="verification-row">
+                <div>
+                    <h3>{{ item.label }}</h3>
+                    <p>{{ item.description }}</p>
+                </div>
+                <span class="badge badge-{{ item.tone }}">{{ item.value }}</span>
+            </article>
+        {% endfor %}
+    </div>
+
+    {% if verification_cta %}
+        <div class="section-footer">
+            <a href="{{ verification_cta.href }}" class="btn btn-secondary btn-compact">{{ verification_cta.label }}</a>
+        </div>
+    {% endif %}
+</section>

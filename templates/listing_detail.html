@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block body_class %}app-body landing-body marketplace-body{% endblock %}
+
+{% block body %}
+    {% include "includes/public_header.html" %}
+
+    <main class="public-shell">
+        <div class="public-container">
+            {% include "includes/messages.html" %}
+
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <a href="{% url 'home' %}">Browse Listings</a>
+                <span>/</span>
+                <span>{{ listing.category_label }}</span>
+            </nav>
+
+            <section class="detail-hero">
+                <div class="detail-gallery">
+                    <div class="detail-gallery-stage">
+                        <img
+                            src="{{ listing.primary_image_url }}"
+                            alt="{{ listing.title }}"
+                            id="listing-detail-image"
+                            data-gallery-stage
+                        >
+                    </div>
+                    <div class="detail-gallery-thumbs">
+                        {% for image in listing.gallery %}
+                            <button
+                                type="button"
+                                class="gallery-thumb{% if forloop.first %} is-active{% endif %}"
+                                data-gallery-thumb
+                                data-image-src="{{ image }}"
+                                aria-label="View image {{ forloop.counter }}"
+                            >
+                                <img src="{{ image }}" alt="{{ listing.title }} view {{ forloop.counter }}">
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="detail-sidebar">
+                    <div class="detail-card">
+                        {% if listing.badges %}
+                            <div class="detail-badges">
+                                {% for badge in listing.badges %}
+                                    <span class="listing-badge">{{ badge }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <p class="eyebrow">{{ listing.category_label }}</p>
+                        <h1>{{ listing.title }}</h1>
+                        <strong class="detail-price">{{ listing.price_display }}</strong>
+
+                        <div class="detail-meta-grid">
+                            <div>
+                                <span class="detail-meta-label">Condition</span>
+                                <strong>{{ listing.condition_label }}</strong>
+                            </div>
+                            <div>
+                                <span class="detail-meta-label">Location</span>
+                                <strong>{{ listing.location }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="detail-actions">
+                            {% if is_owner %}
+                                <a href="{{ listing.edit_url }}" class="btn btn-primary btn-block">Manage Listing</a>
+                            {% elif request.user.is_authenticated %}
+                                <form method="post" action="{{ listing.buy_now_url }}" data-loading-form>
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-block" data-submit-button>
+                                        <span class="button-label">Buy Now</span>
+                                    </button>
+                                </form>
+                                {% if listing.is_negotiable %}
+                                    <button type="button" class="btn btn-secondary btn-block" data-modal-open="offer-modal">Make Offer</button>
+                                {% endif %}
+                            {% else %}
+                                <a href="{{ login_href }}" class="btn btn-primary btn-block">Buy Now</a>
+                                {% if listing.is_negotiable %}
+                                    <a href="{{ login_href }}" class="btn btn-secondary btn-block">Make Offer</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        {% if not is_owner and not request.user.is_authenticated %}
+                            <p class="detail-auth-note">New here? <a href="{{ signup_href }}">Create an account</a> to reserve this item instantly.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="detail-card detail-card-muted">
+                        <p class="eyebrow">Trust + flow</p>
+                        <h2>Pay now to reserve this item. Inspect before the seller gets paid.</h2>
+                        <div class="trust-grid">
+                            <div class="trust-row">
+                                <span>Seller status</span>
+                                <strong>{{ listing.seller_verification_label }}</strong>
+                            </div>
+                            <div class="trust-row">
+                                <span>Seller</span>
+                                <strong>{{ listing.seller_name }}</strong>
+                            </div>
+                            <div class="trust-row">
+                                <span>Location</span>
+                                <strong>{{ listing.location }}</strong>
+                            </div>
+                            <div class="trust-row">
+                                <span>Condition</span>
+                                <strong>{{ listing.condition_label }}</strong>
+                            </div>
+                            <div class="trust-row">
+                                <span>Defects</span>
+                                <strong>{% if listing.defects %}{{ listing.defects }}{% else %}No defects disclosed{% endif %}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="detail-content-grid">
+                <article class="detail-section-card">
+                    <p class="eyebrow">Details</p>
+                    <h2>What buyers need to know</h2>
+                    <p>{{ listing.description }}</p>
+                </article>
+
+                <article class="detail-section-card">
+                    <p class="eyebrow">Action flow</p>
+                    <h2>Fast, protected checkout</h2>
+                    <ol class="detail-flow-list">
+                        <li>Buy now to place the payment hold and reserve the item.</li>
+                        <li>Meet the seller and inspect the item before release.</li>
+                        <li>Confirm condition so the seller can be paid.</li>
+                    </ol>
+                </article>
+            </section>
+        </div>
+    </main>
+
+    {% if listing.is_negotiable and not is_owner and request.user.is_authenticated %}
+        <div class="modal-backdrop{% if offer_modal_open %} is-open{% endif %}" id="offer-modal"{% if not offer_modal_open %} hidden{% endif %}>
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
+                <div class="modal-header">
+                    <div>
+                        <p class="eyebrow">Make offer</p>
+                        <h2 id="offer-modal-title">{{ listing.title }}</h2>
+                    </div>
+                    <button type="button" class="modal-close" data-modal-close aria-label="Close offer form">×</button>
+                </div>
+
+                <form method="post" action="{{ listing.make_offer_url }}" data-loading-form>
+                    {% csrf_token %}
+                    {% include "includes/form_field.html" with field=offer_form.amount %}
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+                        <button type="submit" class="btn btn-primary" data-submit-button>
+                            <span class="button-label">Send Offer</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    {% include "includes/public_footer.html" %}
+{% endblock %}

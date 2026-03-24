@@ -1,0 +1,43 @@
+{% extends "dashboard/layout.html" %}
+
+{% block dashboard_content %}
+    <section class="page-intro page-intro-compact">
+        <div>
+            <p class="eyebrow">{{ form_eyebrow }}</p>
+            <h1>{{ form_heading }}</h1>
+            <p class="body-copy">{{ form_description }}</p>
+        </div>
+    </section>
+
+    <section class="panel-card">
+        <form method="post" novalidate data-loading-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% include "includes/form_field.html" with field=form.title %}
+            {% include "includes/form_field.html" with field=form.category %}
+            {% include "includes/form_field.html" with field=form.price %}
+            {% include "includes/form_field.html" with field=form.condition %}
+            {% include "includes/form_field.html" with field=form.location %}
+            {% include "includes/form_field.html" with field=form.image_url %}
+            {% include "includes/form_field.html" with field=form.gallery_image_urls %}
+            {% include "includes/form_field.html" with field=form.is_negotiable %}
+            {% include "includes/form_field.html" with field=form.status %}
+            {% include "includes/form_field.html" with field=form.description %}
+            {% include "includes/form_field.html" with field=form.defects %}
+
+            <div class="panel-actions">
+                <a href="{% url 'dashboard_listings' %}" class="btn btn-secondary">Back</a>
+                <button type="submit" class="btn btn-primary" data-submit-button>
+                    <span class="button-label">{{ submit_label }}</span>
+                </button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

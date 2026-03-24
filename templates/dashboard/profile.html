@@ -1,0 +1,34 @@
+{% extends "dashboard/layout.html" %}
+
+{% block dashboard_content %}
+    <section class="page-intro page-intro-compact">
+        <div>
+            <p class="eyebrow">Profile</p>
+            <h1>Profile settings</h1>
+            <p class="body-copy">Update your name, recovery email, and sign-in phone number. Phone changes require your current password.</p>
+        </div>
+    </section>
+
+    <section class="panel-card">
+        <form method="post" novalidate data-loading-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% include "includes/form_field.html" with field=form.name %}
+            {% include "includes/form_field.html" with field=form.email %}
+            {% include "includes/form_field.html" with field=form.phone_number %}
+            {% include "includes/form_field.html" with field=form.current_password %}
+            <div class="panel-actions">
+                <a href="{% url 'dashboard_home' %}" class="btn btn-secondary">Back</a>
+                <button type="submit" class="btn btn-primary" data-submit-button>
+                    <span class="button-label">Save changes</span>
+                </button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

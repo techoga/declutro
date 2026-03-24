@@ -1,0 +1,33 @@
+<footer class="public-footer">
+    <div class="public-container footer-grid">
+        <div class="footer-column footer-column-brand">
+            <a href="{% url 'home' %}" class="brand-lockup brand-lockup-inverse">
+                <span class="brand-mark"></span>
+                <span>Declutro</span>
+            </a>
+            <p>The fastest way to close second-hand deals.</p>
+        </div>
+
+        <div class="footer-column">
+            <h3>Product</h3>
+            <a href="{% url 'home' %}#listings">Browse Listings</a>
+            <a href="{{ sell_href|default:'#' }}">Sell an Item</a>
+        </div>
+
+        <div class="footer-column">
+            <h3>Company</h3>
+            <a href="{% url 'about_page' %}">About</a>
+            <a href="{% url 'contact_page' %}">Contact</a>
+        </div>
+
+        <div class="footer-column">
+            <h3>Legal</h3>
+            <a href="{% url 'privacy_page' %}">Privacy Policy</a>
+            <a href="{% url 'terms_page' %}">Terms of Service</a>
+        </div>
+    </div>
+
+    <div class="public-container footer-bottom">
+        <p>© 2026 Declutro. All rights reserved.</p>
+    </div>
+</footer>

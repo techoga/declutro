@@ -1,0 +1,103 @@
+<section class="section-card" id="transactions">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Open transactions</p>
+            <h2>Active deals</h2>
+        </div>
+        <span class="count-pill">{{ open_transactions_total }}</span>
+    </div>
+
+    <div class="transaction-columns">
+        <div class="subsection-card">
+            <div class="subsection-heading">
+                <h3>Buying</h3>
+                <span class="subsection-count">{{ buying_transactions|length }}</span>
+            </div>
+
+            <div class="stack-list">
+                {% for transaction in buying_transactions %}
+                    <article class="transaction-card" id="transaction-{{ transaction.id }}">
+                        <div class="transaction-card-top">
+                            <div>
+                                <h4>{{ transaction.item_name }}</h4>
+                                <p class="meta-copy">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
+                            </div>
+                            <span class="badge badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
+                        </div>
+                        <div class="transaction-card-meta">
+                            <strong>{{ transaction.price_display }}</strong>
+                            <span>{{ transaction.meta_line }}</span>
+                        </div>
+                        <p class="transaction-note">{{ transaction.next_step }}</p>
+                        <div class="card-actions">
+                            {% if transaction.cta_label != "View Details" %}
+                                {% if transaction.cta_kind == "form" and transaction.cta_action %}
+                                    <form method="post" action="{{ transaction.cta_action }}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-primary btn-compact">{{ transaction.cta_label }}</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{{ transaction.cta_href }}" class="btn btn-primary btn-compact">{{ transaction.cta_label }}</a>
+                                {% endif %}
+                                <a href="{{ transaction.detail_href }}" class="btn btn-secondary btn-compact">View Details</a>
+                            {% else %}
+                                <a href="{{ transaction.detail_href }}" class="btn btn-secondary btn-compact">View Details</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-state empty-state-small">
+                        <h4>No active buying deals</h4>
+                        <p>Offers and purchases you initiate will show up here with clear next steps.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="subsection-card">
+            <div class="subsection-heading">
+                <h3>Selling</h3>
+                <span class="subsection-count">{{ selling_transactions|length }}</span>
+            </div>
+
+            <div class="stack-list">
+                {% for transaction in selling_transactions %}
+                    <article class="transaction-card" id="transaction-{{ transaction.id }}">
+                        <div class="transaction-card-top">
+                            <div>
+                                <h4>{{ transaction.item_name }}</h4>
+                                <p class="meta-copy">{{ transaction.counterparty_label }}: {{ transaction.counterparty_name }}</p>
+                            </div>
+                            <span class="badge badge-{{ transaction.status_tone }}">{{ transaction.status_label }}</span>
+                        </div>
+                        <div class="transaction-card-meta">
+                            <strong>{{ transaction.price_display }}</strong>
+                            <span>{{ transaction.meta_line }}</span>
+                        </div>
+                        <p class="transaction-note">{{ transaction.next_step }}</p>
+                        <div class="card-actions">
+                            {% if transaction.cta_label != "View Details" %}
+                                {% if transaction.cta_kind == "form" and transaction.cta_action %}
+                                    <form method="post" action="{{ transaction.cta_action }}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-primary btn-compact">{{ transaction.cta_label }}</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{{ transaction.cta_href }}" class="btn btn-primary btn-compact">{{ transaction.cta_label }}</a>
+                                {% endif %}
+                                <a href="{{ transaction.detail_href }}" class="btn btn-secondary btn-compact">View Details</a>
+                            {% else %}
+                                <a href="{{ transaction.detail_href }}" class="btn btn-secondary btn-compact">View Details</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-state empty-state-small">
+                        <h4>No active selling deals</h4>
+                        <p>Buyer responses, payment states, and meetup coordination will stay visible here.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>

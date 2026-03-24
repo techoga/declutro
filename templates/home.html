@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block body_class %}app-body landing-body marketplace-body{% endblock %}
+
+{% block body %}
+    {% include "includes/public_header.html" %}
+
+    <main class="public-shell">
+        <div class="public-container">
+            {% include "includes/messages.html" %}
+
+            <section class="hero-panel">
+                <div class="hero-copy">
+                    <p class="eyebrow">Transaction-first resale</p>
+                    <h1>See it. Pay. Lock it.</h1>
+                    <p class="hero-subcopy">
+                        Secure high-demand items instantly. Pay now, inspect before seller gets paid.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#listings" class="btn btn-primary">Browse Listings</a>
+                        <a href="{{ sell_href }}" class="btn btn-secondary">Sell an Item</a>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="hero-metric">
+                            <strong>{{ listing_count }}</strong>
+                            <span>Live listings</span>
+                        </div>
+                        <div class="hero-metric">
+                            <strong>{{ verified_seller_count }}</strong>
+                            <span>Verified sellers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="hero-rail">
+                    <div class="hero-spotlight-card">
+                        <p class="hero-spotlight-label">How Declutro works</p>
+                        <ol class="hero-flow-list">
+                            <li>Spot the item and act fast.</li>
+                            <li>Pay to reserve it before someone else does.</li>
+                            <li>Inspect first. Seller gets paid after confirmation.</li>
+                        </ol>
+                    </div>
+                    <div class="hero-spotlight-card hero-spotlight-card-muted">
+                        <p class="hero-spotlight-label">Built for action</p>
+                        <strong>No endless browsing loops.</strong>
+                        <span>Every listing is designed to move you from interest to commitment quickly.</span>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="filter-panel" id="listings">
+                <div class="filter-panel-copy">
+                    <p class="eyebrow">Available now</p>
+                    <h2>Filter fast. Decide faster.</h2>
+                </div>
+
+                <form method="get" class="filter-bar">
+                    <div class="filter-control">
+                        <label for="category">Category</label>
+                        <select id="category" name="category">
+                            <option value="">All categories</option>
+                            {% for option in categories %}
+                                <option value="{{ option.value }}"{% if selected_filters.category == option.value %} selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-control">
+                        <label for="location">Location</label>
+                        <select id="location" name="location">
+                            <option value="">All cities</option>
+                            {% for option in locations %}
+                                <option value="{{ option }}"{% if selected_filters.location == option %} selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-control">
+                        <label for="sort">Sort</label>
+                        <select id="sort" name="sort">
+                            {% for option in sort_options %}
+                                <option value="{{ option.value }}"{% if selected_filters.sort == option.value %} selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <label class="filter-toggle" for="negotiable">
+                        <input id="negotiable" type="checkbox" name="negotiable" value="1"{% if selected_filters.negotiable %} checked{% endif %}>
+                        <span>Negotiable only</span>
+                    </label>
+
+                    <button type="submit" class="btn btn-primary filter-submit">Apply</button>
+                </form>
+            </section>
+
+            {% if listings %}
+                <section class="listing-grid" aria-label="Available listings">
+                    {% for listing in listings %}
+                        <a href="{{ listing.detail_url }}" class="listing-card">
+                            <div class="listing-card-media">
+                                <img src="{{ listing.image_url }}" alt="{{ listing.title }}" loading="lazy">
+                                {% if listing.badges %}
+                                    <div class="listing-badges">
+                                        {% for badge in listing.badges %}
+                                            <span class="listing-badge">{{ badge }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="listing-card-body">
+                                <div class="listing-card-copy">
+                                    <h3>{{ listing.title }}</h3>
+                                    <p>{{ listing.condition_label }}</p>
+                                </div>
+                                <strong class="listing-card-price">{{ listing.price_display }}</strong>
+                                <div class="listing-card-meta">
+                                    <span>{{ listing.location }}</span>
+                                    <span>Buy now or make offer</span>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </section>
+            {% else %}
+                <section class="empty-state empty-state-large">
+                    <p class="eyebrow">No live matches</p>
+                    <h2>No items found. Try adjusting filters.</h2>
+                    <p>Broaden your category or location selection, or list the item you want to sell instead.</p>
+                    <a href="{{ sell_href }}" class="btn btn-primary">Sell an Item</a>
+                </section>
+            {% endif %}
+        </div>
+    </main>
+
+    {% include "includes/public_footer.html" %}
+{% endblock %}

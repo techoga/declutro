@@ -1,0 +1,14 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% if page_title %}{{ page_title }} · {% endif %}Declutro{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script defer src="{% static 'js/app.js' %}"></script>
+</head>
+<body class="{% block body_class %}app-body{% endblock %}">
+    {% block body %}{% endblock %}
+</body>
+</html>
