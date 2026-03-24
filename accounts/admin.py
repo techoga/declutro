@@ -11,12 +11,26 @@ class UserAdmin(BaseUserAdmin):
     form = AdminUserChangeForm
     model = User
     ordering = ("-date_joined",)
-    list_display = ("phone_number", "email", "name", "is_staff", "is_active")
-    list_filter = ("is_staff", "is_active", "is_superuser")
-    search_fields = ("phone_number", "email", "name")
+    list_display = ("phone_number", "email", "name", "account_type", "is_email_verified", "is_staff", "is_active")
+    list_filter = ("account_type", "is_phone_verified", "is_email_verified", "is_identity_verified", "is_staff", "is_active", "is_superuser")
+    search_fields = ("phone_number", "email", "name", "business_name", "social_handle")
 
     fieldsets = (
         (None, {"fields": ("phone_number", "email", "name", "password")}),
+        (
+            "Compliance and trust",
+            {
+                "fields": (
+                    "account_type",
+                    "business_name",
+                    "social_handle",
+                    "cac_certificate",
+                    "is_phone_verified",
+                    "is_email_verified",
+                    "is_identity_verified",
+                ),
+            },
+        ),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
@@ -25,7 +39,18 @@ class UserAdmin(BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("phone_number", "email", "name", "password1", "password2", "is_staff", "is_active"),
+                "fields": (
+                    "phone_number",
+                    "email",
+                    "name",
+                    "account_type",
+                    "business_name",
+                    "social_handle",
+                    "password1",
+                    "password2",
+                    "is_staff",
+                    "is_active",
+                ),
             },
         ),
     )

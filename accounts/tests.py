@@ -32,6 +32,10 @@ def uploaded_video(name="demo.mp4"):
     return SimpleUploadedFile(name, b"fake-video-bytes", content_type="video/mp4")
 
 
+def uploaded_document(name="cac.pdf"):
+    return SimpleUploadedFile(name, b"fake-pdf-bytes", content_type="application/pdf")
+
+
 @override_settings(
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
     MEDIA_ROOT=TEST_MEDIA_ROOT,
@@ -220,12 +224,33 @@ class AuthFlowTests(TestCase):
         self.client.force_login(self.user)
         dashboard_response = self.client.get(reverse("dashboard_home"))
         self.assertContains(dashboard_response, "Action required")
-        self.assertContains(dashboard_response, "Workspace pulse")
+        self.assertContains(dashboard_response, "Open compliance")
         self.assertContains(dashboard_response, "Open transactions")
         self.assertContains(dashboard_response, "My listings")
-        self.assertContains(dashboard_response, "Compliance and trust")
         self.assertContains(self.client.get(reverse("dashboard_profile")), "Profile settings")
+        self.assertContains(self.client.get(reverse("dashboard_compliance")), "Seller trust and compliance")
         self.assertContains(self.client.get(reverse("dashboard_update_password")), "Update password")
+
+    def test_compliance_update_saves_trust_fields(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dashboard_compliance"),
+            data={
+                "account_type": User.AccountType.BUSINESS,
+                "business_name": "Declutro Devices Ltd",
+                "social_handle": "@declutro.store",
+                "cac_certificate": uploaded_document(),
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("dashboard_compliance"))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.account_type, User.AccountType.BUSINESS)
+        self.assertEqual(self.user.business_name, "Declutro Devices Ltd")
+        self.assertEqual(self.user.social_handle, "declutro.store")
+        self.assertTrue(self.user.cac_certificate)
 
     def test_sell_item_creates_listing(self):
         self.client.force_login(self.user)
@@ -292,6 +317,7 @@ class DashboardWorkspaceRenderTests(TestCase):
             (reverse("dashboard_transactions"), "section"),
             (reverse("dashboard_listings"), "section"),
             (reverse("dashboard_profile"), "form"),
+            (reverse("dashboard_compliance"), "form"),
             (reverse("dashboard_update_password"), "form"),
             (reverse("dashboard_sell_item"), "form"),
             (reverse("dashboard_listing_edit", kwargs={"listing_id": self.listing.pk}), "form"),
@@ -306,7 +332,7 @@ class DashboardWorkspaceRenderTests(TestCase):
                 self.assertContains(response, "data-dashboard-nav-toggle")
                 self.assertContains(response, "workspace-rail")
                 self.assertEqual(response.context["page_variant"], page_variant)
-                self.assertEqual(len(response.context["dashboard_nav_items"]), 5)
+                self.assertEqual(len(response.context["dashboard_nav_items"]), 3)
 
     def test_listing_form_includes_preview_hooks(self):
         response = self.client.get(reverse("dashboard_sell_item"))
@@ -377,6 +403,7 @@ class PublicSurfaceRenderTests(TestCase):
         self.assertEqual(len(detail_response.context["listing"]["summary_items"]), 4)
         self.assertEqual(len(detail_response.context["listing"]["journey_steps"]), 3)
         self.assertContains(detail_response, "product-seller-card")
+        self.assertContains(detail_response, "data-gallery-lightbox-open")
 
     def test_listing_detail_supports_uploaded_video_media(self):
         ListingMedia.objects.create(
@@ -488,7 +515,7 @@ class PublicMarketplaceTests(TestCase):
         self.assertContains(response, "Buy Now")
         self.assertContains(response, "Make Offer")
         self.assertContains(response, "Pay now to reserve this item. Inspect before the seller gets paid.")
-        self.assertContains(response, "Verified")
+        self.assertContains(response, "Trusted seller")
 
     def test_buy_now_requires_authentication(self):
         response = self.client.post(reverse("buy_now", kwargs={"listing_id": self.phone_listing.pk}))

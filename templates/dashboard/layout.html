@@ -53,53 +53,6 @@
 
                 <a href="{% url 'dashboard_sell_item' %}" class="btn btn-primary workspace-primary-cta">Sell Item</a>
             </div>
-
-            {% if page_variant == "overview" %}
-                <div class="workspace-rail-secondary">
-                    <section class="workspace-owner-card">
-                        <div class="workspace-owner-top">
-                            <span class="workspace-owner-avatar">{{ request.user.initials }}</span>
-                            <div>
-                                <p class="workspace-label">Control room</p>
-                                <h2>{{ request.user.display_name }}</h2>
-                            </div>
-                        </div>
-                        <p>Run inventory, offers, payments, and meetups from one lighter, calmer operating surface.</p>
-                        <div class="workspace-owner-stats" aria-label="Workspace snapshot">
-                            <article>
-                                <strong>{{ open_transactions_total }}</strong>
-                                <span>live deals</span>
-                            </article>
-                            <article>
-                                <strong>{{ action_items|length }}</strong>
-                                <span>in queue</span>
-                            </article>
-                        </div>
-                    </section>
-
-                    <section class="workspace-rail-panel">
-                        <div>
-                            <p class="workspace-label">Live signal</p>
-                            <h3>Stay ahead of drift</h3>
-                        </div>
-                        <div class="workspace-rail-kpis">
-                            <article>
-                                <span>Inventory</span>
-                                <strong>{{ listings_total }}</strong>
-                            </article>
-                            <article>
-                                <span>Closed</span>
-                                <strong>{{ closed_transactions_total }}</strong>
-                            </article>
-                        </div>
-                        {% if using_demo_data %}
-                            <p class="workspace-rail-panel-copy">Preview data stays visible until your first live listings and transactions start flowing.</p>
-                        {% else %}
-                            <p class="workspace-rail-panel-copy">Deals, inventory, and trust states stay readable without stealing space from the page itself.</p>
-                        {% endif %}
-                    </section>
-                </div>
-            {% endif %}
         </div>
     </section>
 
@@ -126,13 +79,6 @@
             </div>
 
             <div class="workspace-toolbar-actions">
-                {% if page_variant != "form" %}
-                    <div class="workspace-toolbar-meta" aria-label="Workspace summary">
-                        <span class="workspace-toolbar-chip workspace-toolbar-chip-emphasis">{{ action_items|length }} in queue</span>
-                        <span class="workspace-toolbar-chip">{{ open_transactions_total }} live deals</span>
-                        <span class="workspace-toolbar-chip">{{ listings_total }} listings</span>
-                    </div>
-                {% endif %}
                 <div class="dropdown" data-dropdown>
                     <button type="button" class="avatar-button workspace-account-trigger" data-dropdown-trigger aria-expanded="false">
                         <span class="avatar-circle">{{ request.user.initials }}</span>
@@ -147,6 +93,7 @@
                             <span>{{ request.user.phone_number }}</span>
                         </div>
                         <a href="{% url 'dashboard_profile' %}" class="dropdown-link">View Profile</a>
+                        <a href="{% url 'dashboard_compliance' %}" class="dropdown-link">Compliance</a>
                         <a href="{% url 'dashboard_update_password' %}" class="dropdown-link">Security</a>
                         <form method="post" action="{% url 'auth_logout' %}">
                             {% csrf_token %}
@@ -179,10 +126,6 @@
         <a href="{% url 'dashboard_listings' %}" class="workspace-mobile-link{% if active_nav == 'listings' %} is-active{% endif %}">
             <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="listings" %}</span>
             <span>Listings</span>
-        </a>
-        <a href="{% url 'dashboard_profile' %}" class="workspace-mobile-link{% if active_nav == 'profile' or active_nav == 'settings' %} is-active{% endif %}">
-            <span class="workspace-mobile-icon" aria-hidden="true">{% include "dashboard/partials/nav_icon.html" with icon="profile" %}</span>
-            <span>Profile</span>
         </a>
     </nav>
 </div>

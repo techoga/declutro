@@ -1,0 +1,88 @@
+{% extends "dashboard/layout.html" %}
+
+{% block dashboard_content %}
+    {% include "dashboard/partials/page_header.html" %}
+
+    <section class="dashboard-form-card dashboard-form-card-single">
+        <div class="dashboard-compliance-summary">
+            <div class="dashboard-compliance-summary-copy">
+                <p class="workspace-label">Trust level</p>
+                <h2>{{ trust_summary.level_label }}</h2>
+                <p>{{ trust_summary.summary }}</p>
+            </div>
+            <div class="dashboard-compliance-metrics" aria-label="Trust summary">
+                <article class="dashboard-inline-stat">
+                    <span class="dashboard-inline-stat-label">Trust score</span>
+                    <strong class="dashboard-inline-stat-value">{{ trust_summary.score }}/100</strong>
+                </article>
+                <article class="dashboard-inline-stat">
+                    <span class="dashboard-inline-stat-label">Verified signals</span>
+                    <strong class="dashboard-inline-stat-value">{{ trust_summary.verified_count }}</strong>
+                </article>
+                <article class="dashboard-inline-stat">
+                    <span class="dashboard-inline-stat-label">Account type</span>
+                    <strong class="dashboard-inline-stat-value">{{ request.user.get_account_type_display }}</strong>
+                </article>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate data-loading-form class="dashboard-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <section class="dashboard-form-section">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Trust profile</p>
+                    <h2>What buyers can validate</h2>
+                    <p>Keep the public trust layer current so buyers can assess whether they should pay quickly or ask more questions first.</p>
+                </div>
+                <div class="dashboard-field-grid dashboard-field-grid-two">
+                    {% include "includes/form_field.html" with field=form.account_type %}
+                    {% include "includes/form_field.html" with field=form.social_handle %}
+                    {% include "includes/form_field.html" with field=form.business_name %}
+                    {% include "includes/form_field.html" with field=form.cac_certificate %}
+                </div>
+                {% if request.user.cac_certificate %}
+                    <div class="dashboard-inline-file">
+                        <span class="workspace-label">Existing CAC document</span>
+                        <a href="{{ request.user.cac_certificate.url }}" target="_blank" rel="noopener">Open current file</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-form-section dashboard-form-section-support">
+                <div class="dashboard-section-intro">
+                    <p class="workspace-label">Verification signals</p>
+                    <h2>What is live right now</h2>
+                    <p>These signals are already influencing how your seller profile reads across listings and transaction pages.</p>
+                </div>
+                <div class="dashboard-verification-grid">
+                    {% for item in verification_items %}
+                        <article class="dashboard-verification-card">
+                            <div>
+                                <p class="workspace-label">Trust signal</p>
+                                <h3>{{ item.label }}</h3>
+                                <p>{{ item.description }}</p>
+                            </div>
+                            <span class="dashboard-badge dashboard-badge-{{ item.tone }}">{{ item.value }}</span>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <div class="dashboard-form-actions">
+                <a href="{% url 'dashboard_profile' %}" class="btn btn-ghost">Profile</a>
+                <a href="{% url 'dashboard_update_password' %}" class="btn btn-secondary">Security</a>
+                <button type="submit" class="btn btn-primary" data-submit-button>
+                    <span class="button-label">Save compliance details</span>
+                </button>
+            </div>
+        </form>
+    </section>
+{% endblock %}

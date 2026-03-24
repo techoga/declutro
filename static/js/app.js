@@ -96,40 +96,87 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const galleryStageImage = document.querySelector("[data-gallery-stage-image]");
     const galleryStageVideo = document.querySelector("[data-gallery-stage-video]");
-    document.querySelectorAll("[data-gallery-thumb]").forEach((thumb) => {
-        thumb.addEventListener("click", () => {
-            if (!galleryStageImage && !galleryStageVideo) {
+    const galleryLightbox = document.getElementById("gallery-lightbox");
+    const galleryLightboxImage = document.querySelector("[data-gallery-lightbox-image]");
+    const galleryLightboxVideo = document.querySelector("[data-gallery-lightbox-video]");
+    const galleryLightboxOpen = document.querySelector("[data-gallery-lightbox-open]");
+    const galleryThumbs = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
+
+    if (galleryThumbs.length && (galleryStageImage || galleryStageVideo)) {
+        const mediaByIndex = new Map();
+        let activeIndex = "0";
+
+        const setStageMedia = (imageElement, videoElement, media) => {
+            if (!imageElement && !videoElement) {
                 return;
             }
-            const mediaType = thumb.dataset.mediaType || "image";
-            const mediaSrc = thumb.dataset.mediaSrc || "";
-            const mediaPoster = thumb.dataset.mediaPoster || "";
 
-            if (mediaType === "video" && galleryStageVideo) {
-                galleryStageVideo.hidden = false;
-                galleryStageVideo.poster = mediaPoster;
-                galleryStageVideo.innerHTML = "";
+            if ((media.type || "image") === "video" && videoElement) {
+                videoElement.hidden = false;
+                videoElement.poster = media.poster || "";
+                videoElement.innerHTML = "";
                 const source = document.createElement("source");
-                source.src = mediaSrc;
-                galleryStageVideo.appendChild(source);
-                galleryStageVideo.load();
-                if (galleryStageImage) {
-                    galleryStageImage.hidden = true;
+                source.src = media.src || "";
+                videoElement.appendChild(source);
+                videoElement.load();
+                if (imageElement) {
+                    imageElement.hidden = true;
                 }
-            } else if (galleryStageImage) {
-                galleryStageImage.src = mediaSrc;
-                galleryStageImage.hidden = false;
-                if (galleryStageVideo) {
-                    galleryStageVideo.pause();
-                    galleryStageVideo.hidden = true;
-                    galleryStageVideo.innerHTML = "";
-                }
+                return;
             }
 
-            document.querySelectorAll("[data-gallery-thumb]").forEach((item) => {
-                item.classList.remove("is-active");
+            if (imageElement) {
+                imageElement.src = media.src || "";
+                imageElement.alt = media.label || imageElement.alt || "";
+                imageElement.hidden = false;
+            }
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.hidden = true;
+                videoElement.innerHTML = "";
+            }
+        };
+
+        const syncActiveThumbs = () => {
+            galleryThumbs.forEach((thumb) => {
+                thumb.classList.toggle("is-active", (thumb.dataset.mediaIndex || "0") === activeIndex);
             });
-            thumb.classList.add("is-active");
+        };
+
+        const setActiveMedia = (index) => {
+            const media = mediaByIndex.get(index);
+            if (!media) {
+                return;
+            }
+            activeIndex = index;
+            setStageMedia(galleryStageImage, galleryStageVideo, media);
+            setStageMedia(galleryLightboxImage, galleryLightboxVideo, media);
+            syncActiveThumbs();
+        };
+
+        galleryThumbs.forEach((thumb) => {
+            const mediaIndex = thumb.dataset.mediaIndex || "0";
+            if (!mediaByIndex.has(mediaIndex)) {
+                mediaByIndex.set(mediaIndex, {
+                    type: thumb.dataset.mediaType || "image",
+                    src: thumb.dataset.mediaSrc || "",
+                    poster: thumb.dataset.mediaPoster || "",
+                    label: thumb.dataset.mediaLabel || "",
+                });
+            }
+
+            thumb.addEventListener("click", () => {
+                setActiveMedia(mediaIndex);
+            });
         });
-    });
+
+        setActiveMedia(activeIndex);
+
+        if (galleryLightboxOpen && galleryLightbox) {
+            galleryLightboxOpen.addEventListener("click", () => {
+                setActiveMedia(activeIndex);
+                openModal(galleryLightbox);
+            });
+        }
+    }
 });

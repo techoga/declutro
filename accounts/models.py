@@ -26,6 +26,11 @@ def listing_media_upload_to(instance, filename):
     return _listing_upload_path(folder, filename)
 
 
+def user_compliance_upload_to(instance, filename):
+    extension = Path(filename or "").suffix.lower()
+    return f"users/compliance/{uuid4().hex}{extension}"
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -65,9 +70,21 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    class AccountType(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual"
+        BUSINESS = "business", "Business"
+
     phone_number = models.CharField(max_length=16, unique=True, db_index=True)
     email = models.EmailField(blank=True, null=True, unique=True)
     name = models.CharField(max_length=150, blank=True)
+    account_type = models.CharField(
+        max_length=16,
+        choices=AccountType.choices,
+        default=AccountType.INDIVIDUAL,
+    )
+    business_name = models.CharField(max_length=180, blank=True)
+    social_handle = models.CharField(max_length=120, blank=True)
+    cac_certificate = models.FileField(upload_to=user_compliance_upload_to, blank=True)
     is_phone_verified = models.BooleanField(default=True)
     is_email_verified = models.BooleanField(default=False)
     is_identity_verified = models.BooleanField(default=False)
@@ -113,6 +130,65 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.name or self.phone_number
+
+    @property
+    def social_handle_display(self):
+        handle = (self.social_handle or "").strip()
+        if handle and not handle.startswith("@") and "://" not in handle:
+            return f"@{handle}"
+        return handle
+
+    @property
+    def has_business_documents(self):
+        return bool(self.cac_certificate)
+
+    @property
+    def trust_score(self):
+        score = 0
+        if self.phone_number and self.is_phone_verified:
+            score += 20
+        if self.email:
+            score += 10
+        if self.email and self.is_email_verified:
+            score += 20
+        if self.is_identity_verified:
+            score += 20
+        if self.social_handle:
+            score += 10
+        if self.account_type == self.AccountType.BUSINESS and self.business_name:
+            score += 10
+        if self.account_type == self.AccountType.BUSINESS and self.cac_certificate:
+            score += 10
+        return min(score, 100)
+
+    @property
+    def trust_level(self):
+        score = self.trust_score
+        if score >= 80:
+            return "high"
+        if score >= 60:
+            return "trusted"
+        if score >= 40:
+            return "standard"
+        return "new"
+
+    @property
+    def trust_level_label(self):
+        return {
+            "high": "High trust",
+            "trusted": "Trusted seller",
+            "standard": "Standard trust",
+            "new": "New seller",
+        }[self.trust_level]
+
+    @property
+    def trust_tone(self):
+        return {
+            "high": "success",
+            "trusted": "info",
+            "standard": "warning",
+            "new": "neutral",
+        }[self.trust_level]
 
 
 class Listing(models.Model):

@@ -3255,3 +3255,102 @@
         border-radius: 26px;
     }
 }
+
+/* Compliance and repetition cleanup */
+
+.workspace-rail {
+    padding-block: 16px 18px;
+}
+
+.workspace-rail-body {
+    gap: 12px;
+}
+
+.workspace-rail-primary {
+    gap: 14px 18px;
+}
+
+.workspace-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workspace-toolbar-actions {
+    justify-content: flex-end;
+}
+
+.dashboard-overview-hero {
+    grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.82fr);
+}
+
+.dashboard-overview-signal-list,
+.dashboard-compliance-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.dashboard-overview-signal,
+.dashboard-inline-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid rgba(25, 40, 72, 0.08);
+    border-radius: 18px;
+    background: rgba(247, 250, 255, 0.96);
+}
+
+.dashboard-overview-signal span,
+.dashboard-inline-file span {
+    color: var(--workspace-text-soft);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-overview-signal strong,
+.dashboard-inline-file a {
+    color: var(--workspace-text);
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.dashboard-overview-panel-actions {
+    display: grid;
+    gap: 14px;
+}
+
+.dashboard-compliance-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.88fr);
+    gap: 20px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(25, 40, 72, 0.08);
+}
+
+.dashboard-compliance-summary-copy {
+    display: grid;
+    gap: 12px;
+}
+
+.dashboard-compliance-summary-copy h2 {
+    margin: 0;
+    font-size: clamp(1.55rem, 2vw, 2.1rem);
+    letter-spacing: -0.04em;
+}
+
+@media (max-width: 1180px) {
+    .dashboard-overview-hero,
+    .dashboard-compliance-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .dashboard-overview-signal-list,
+    .dashboard-compliance-metrics {
+        grid-template-columns: 1fr;
+    }
+}

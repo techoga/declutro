@@ -30,6 +30,12 @@
             <section class="product-hero">
                 <div class="product-gallery-card">
                     <div class="product-gallery-stage">
+                        <div class="product-gallery-stage-toolbar">
+                            <span class="product-gallery-stage-label">Media preview</span>
+                            <button type="button" class="product-gallery-expand" data-gallery-lightbox-open>
+                                Fullscreen
+                            </button>
+                        </div>
                         <img
                             src="{{ listing.primary_media.url }}"
                             alt="{{ listing.title }}"
@@ -57,9 +63,11 @@
                                 type="button"
                                 class="product-gallery-thumb{% if forloop.first %} is-active{% endif %}"
                                 data-gallery-thumb
+                                data-media-index="{{ forloop.counter0 }}"
                                 data-media-type="{{ item.kind }}"
                                 data-media-src="{{ item.url }}"
                                 data-media-poster="{{ item.poster_url }}"
+                                data-media-label="{{ item.label }}"
                                 aria-label="View {{ item.kind }} {{ forloop.counter }}"
                             >
                                 {% if item.kind == "video" %}
@@ -105,7 +113,10 @@
                             <span class="product-seller-avatar">{{ listing.seller_initials }}</span>
                             <div>
                                 <p>{{ listing.seller_name }}</p>
-                                <span>{{ listing.seller_verification_label }}</span>
+                                <span>{{ listing.seller_trust_label }} · {{ listing.seller_trust_score }}/100</span>
+                                {% if listing.seller_social_handle %}
+                                    <span>{{ listing.seller_social_handle }}</span>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -177,6 +188,68 @@
             </section>
         </div>
     </main>
+
+    <div class="modal-backdrop public-modal-backdrop product-gallery-lightbox" id="gallery-lightbox" hidden>
+        <div class="modal-card public-modal-card product-gallery-lightbox-card" role="dialog" aria-modal="true" aria-labelledby="gallery-lightbox-title">
+            <div class="modal-header public-modal-header">
+                <div>
+                    <p class="public-kicker">Media viewer</p>
+                    <h2 id="gallery-lightbox-title">{{ listing.title }}</h2>
+                </div>
+                <button type="button" class="modal-close public-modal-close" data-modal-close aria-label="Close media viewer">×</button>
+            </div>
+
+            <div class="product-gallery-lightbox-body">
+                <div class="product-gallery-stage product-gallery-stage-lightbox">
+                    <img
+                        src="{{ listing.primary_media.url }}"
+                        alt="{{ listing.title }}"
+                        class="product-gallery-stage-media product-gallery-stage-media-lightbox"
+                        data-gallery-lightbox-image
+                        {% if listing.primary_media.kind != "image" %}hidden{% endif %}
+                    >
+                    <video
+                        class="product-gallery-stage-media product-gallery-stage-media-lightbox"
+                        data-gallery-lightbox-video
+                        controls
+                        playsinline
+                        preload="metadata"
+                        poster="{{ listing.primary_media.poster_url }}"
+                        {% if listing.primary_media.kind != "video" %}hidden{% endif %}
+                    >
+                        {% if listing.primary_media.kind == "video" %}
+                            <source src="{{ listing.primary_media.url }}">
+                        {% endif %}
+                    </video>
+                </div>
+
+                <div class="product-gallery-thumbs product-gallery-thumbs-lightbox">
+                    {% for item in listing.gallery %}
+                        <button
+                            type="button"
+                            class="product-gallery-thumb{% if forloop.first %} is-active{% endif %}"
+                            data-gallery-thumb
+                            data-media-index="{{ forloop.counter0 }}"
+                            data-media-type="{{ item.kind }}"
+                            data-media-src="{{ item.url }}"
+                            data-media-poster="{{ item.poster_url }}"
+                            data-media-label="{{ item.label }}"
+                            aria-label="View {{ item.kind }} {{ forloop.counter }} in fullscreen"
+                        >
+                            {% if item.kind == "video" %}
+                                <div class="product-gallery-thumb-video">
+                                    <video src="{{ item.url }}" muted playsinline preload="metadata"></video>
+                                    <span class="product-gallery-thumb-badge">Video</span>
+                                </div>
+                            {% else %}
+                                <img src="{{ item.url }}" alt="{{ item.label }}">
+                            {% endif %}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% if listing.is_negotiable and not is_owner and request.user.is_authenticated %}
         <div class="modal-backdrop public-modal-backdrop{% if offer_modal_open %} is-open{% endif %}" id="offer-modal"{% if not offer_modal_open %} hidden{% endif %}>

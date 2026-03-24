@@ -21,6 +21,7 @@ from django.views.decorators.http import require_POST
 
 from .dashboard import build_dashboard_context
 from .forms import (
+    ComplianceUpdateForm,
     ForgotPasswordForm,
     ListingForm,
     LoginForm,
@@ -208,18 +209,6 @@ DASHBOARD_NAV_ITEMS = (
         "label": "Listings",
         "href_name": "dashboard_listings",
         "icon": "listings",
-    },
-    {
-        "key": "profile",
-        "label": "Profile",
-        "href_name": "dashboard_profile",
-        "icon": "profile",
-    },
-    {
-        "key": "settings",
-        "label": "Security",
-        "href_name": "dashboard_update_password",
-        "icon": "security",
     },
 )
 
@@ -634,7 +623,27 @@ def _listing_badges(listing):
 
 
 def _seller_is_verified(seller):
-    return bool(seller.is_identity_verified or seller.is_email_verified)
+    return seller.trust_score >= 60
+
+
+def _seller_trust_summary(user):
+    level = user.trust_level
+    next_step = {
+        "high": "Your seller profile already carries strong trust signals across identity, contact, and business details.",
+        "trusted": "One more strong signal, like identity or business documentation, will push this profile into high trust.",
+        "standard": "Complete one or two more trust signals so buyers can commit with less hesitation.",
+        "new": "Add stronger trust signals so buyers can move from browsing to payment with more confidence.",
+    }[level]
+    return {
+        "score": user.trust_score,
+        "level": level,
+        "level_label": user.trust_level_label,
+        "tone": user.trust_tone,
+        "account_type_label": user.get_account_type_display(),
+        "business_name": user.business_name,
+        "social_handle": user.social_handle_display,
+        "next_step": next_step,
+    }
 
 
 def _listing_form_preview(listing=None):
@@ -706,6 +715,7 @@ def _listing_media_gallery(listing):
 
 
 def _serialize_public_listing(listing):
+    trust_summary = _seller_trust_summary(listing.seller)
     return {
         "id": listing.pk,
         "title": listing.title,
@@ -716,7 +726,8 @@ def _serialize_public_listing(listing):
         "image_url": listing.primary_image_url or _placeholder_image(listing.title),
         "detail_url": reverse("listing_detail", kwargs={"listing_id": listing.pk}),
         "badges": _listing_badges(listing),
-        "seller_signal": "Verified seller" if _seller_is_verified(listing.seller) else "Verification pending",
+        "seller_signal": trust_summary["level_label"],
+        "seller_trust_tone": trust_summary["tone"],
         "action_label": "Buy now or make offer" if listing.is_negotiable else "Buy now available",
         "is_negotiable": listing.is_negotiable,
     }
@@ -727,6 +738,7 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
     media_gallery = _listing_media_gallery(listing)
     is_owner = request.user.is_authenticated and request.user.pk == listing.seller_id
     offer_form = offer_form or OfferSubmissionForm(listing, initial={"amount": listing.price})
+    trust_summary = _seller_trust_summary(listing.seller)
 
     return {
         "page_title": listing.title,
@@ -745,7 +757,11 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
             "primary_image_url": listing.primary_image_url or media_gallery[0]["poster_url"],
             "seller_name": listing.seller.display_name,
             "seller_initials": listing.seller.initials,
-            "seller_verification_label": "Verified" if _seller_is_verified(listing.seller) else "Verification pending",
+            "seller_trust_label": trust_summary["level_label"],
+            "seller_trust_score": trust_summary["score"],
+            "seller_trust_tone": trust_summary["tone"],
+            "seller_social_handle": listing.seller.social_handle_display,
+            "seller_account_type": listing.seller.get_account_type_display(),
             "is_negotiable": listing.is_negotiable,
             "buy_now_url": reverse("buy_now", kwargs={"listing_id": listing.pk}),
             "make_offer_url": reverse("create_offer", kwargs={"listing_id": listing.pk}),
@@ -757,13 +773,15 @@ def _build_listing_detail_context(request, listing, offer_form=None, offer_modal
                 {"label": "Pricing", "value": "Offers enabled" if listing.is_negotiable else "Fixed-price listing"},
             ],
             "trust_items": [
-                {
-                    "label": "Seller status",
-                    "value": "Verified" if _seller_is_verified(listing.seller) else "Verification pending",
-                },
+                {"label": "Seller trust", "value": f"{trust_summary['level_label']} · {trust_summary['score']}/100"},
+                {"label": "Account type", "value": listing.seller.get_account_type_display()},
+                {"label": "Social presence", "value": listing.seller.social_handle_display or "Not shared yet"},
                 {"label": "Checkout model", "value": "Protected reservation"},
                 {"label": "Release rule", "value": "After buyer confirmation"},
-                {"label": "Defects", "value": listing.defects or "No defects disclosed"},
+                {
+                    "label": "Business docs",
+                    "value": "CAC on file" if listing.seller.has_business_documents else "No CAC submitted",
+                },
             ],
             "journey_steps": [
                 "Reserve the item by starting checkout before someone else does.",
@@ -913,11 +931,10 @@ def dashboard_view(request):
         _dashboard_shell_context(
             "dashboard",
             page_title="Dashboard",
-            page_eyebrow="Control center",
-            page_heading="Move every live deal forward from one calm workspace.",
+            page_eyebrow="Overview",
+            page_heading="Move every live deal forward.",
             page_description=(
-                "Prioritize urgent actions, monitor buying and selling activity, and keep your "
-                "inventory transaction-ready without bouncing between screens."
+                "Track listings, payments, trust readiness, and next actions from one cleaner workspace."
             ),
             page_variant="overview",
             page_action={
@@ -953,10 +970,14 @@ def profile_view(request):
                 page_eyebrow="Account",
                 page_heading="Profile settings",
                 page_description=(
-                    "Keep your identity, recovery email, and sign-in number accurate so support, "
-                    "trust, and payouts keep moving without friction."
+                    "Keep your identity, recovery email, and sign-in number accurate without mixing it with trust documentation."
                 ),
                 page_variant="form",
+                page_action={
+                    "label": "Compliance",
+                    "href": reverse("dashboard_compliance"),
+                    "kind": "secondary",
+                },
             ),
         }
     )
@@ -965,6 +986,39 @@ def profile_view(request):
         "dashboard/profile.html",
         context,
     )
+
+
+@login_required
+@csrf_protect
+def compliance_view(request):
+    form = ComplianceUpdateForm(request.POST or None, request.FILES or None, instance=request.user)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Compliance details updated.")
+        return redirect("dashboard_compliance")
+
+    context = build_dashboard_context(request.user)
+    context.update(
+        {
+            "form": form,
+            **_dashboard_shell_context(
+                "compliance",
+                page_title="Compliance",
+                page_eyebrow="Trust",
+                page_heading="Seller trust and compliance",
+                page_description=(
+                    "Surface the signals buyers rely on: contact readiness, social presence, and optional business documentation."
+                ),
+                page_variant="form",
+                page_action={
+                    "label": "Profile",
+                    "href": reverse("dashboard_profile"),
+                    "kind": "secondary",
+                },
+            ),
+        }
+    )
+    return render(request, "dashboard/compliance.html", context)
 
 
 @login_required
@@ -990,6 +1044,11 @@ def update_password_view(request):
                     "Refresh your password without interrupting the rest of your current session."
                 ),
                 page_variant="form",
+                page_action={
+                    "label": "Compliance",
+                    "href": reverse("dashboard_compliance"),
+                    "kind": "secondary",
+                },
             ),
         }
     )

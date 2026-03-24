@@ -13,6 +13,7 @@ User = get_user_model()
 INPUT_CLASS = "form-input"
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
 VIDEO_EXTENSIONS = (".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv")
+DOCUMENT_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png", ".webp")
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -297,6 +298,83 @@ class ProfileUpdateForm(StyledFormMixin, forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.email = self.cleaned_data.get("email")
+        if commit:
+            instance.save()
+        return instance
+
+
+class ComplianceUpdateForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["account_type", "business_name", "social_handle", "cac_certificate"]
+        widgets = {
+            "account_type": forms.Select(),
+            "business_name": forms.TextInput(
+                attrs={
+                    "placeholder": "Declutro Devices Ltd",
+                    "autocomplete": "organization",
+                }
+            ),
+            "social_handle": forms.TextInput(
+                attrs={
+                    "placeholder": "@declutro.store",
+                    "autocomplete": "off",
+                }
+            ),
+            "cac_certificate": forms.ClearableFileInput(
+                attrs={
+                    "accept": ".pdf,image/*",
+                }
+            ),
+        }
+        help_texts = {
+            "business_name": "Only required if this account operates as a registered business.",
+            "social_handle": "Optional. Helps buyers validate seller presence and continuity.",
+            "cac_certificate": "Optional high-trust document for business sellers. PDF or image formats only.",
+        }
+
+    def clean_business_name(self):
+        return (self.cleaned_data.get("business_name") or "").strip()
+
+    def clean_social_handle(self):
+        value = (self.cleaned_data.get("social_handle") or "").strip()
+        if value.startswith("https://"):
+            return value
+        return value.lstrip("@")
+
+    def clean_cac_certificate(self):
+        uploaded_file = self.cleaned_data.get("cac_certificate")
+        if not uploaded_file:
+            return uploaded_file
+
+        file_name = (uploaded_file.name or "").lower()
+        content_type = getattr(uploaded_file, "content_type", "") or ""
+        if (
+            content_type not in {"application/pdf"}
+            and not content_type.startswith("image/")
+            and not file_name.endswith(DOCUMENT_EXTENSIONS)
+        ):
+            raise ValidationError("CAC certificate must be a PDF or image file.")
+        if uploaded_file.size > 15 * 1024 * 1024:
+            raise ValidationError("CAC certificate must be 15MB or smaller.")
+        return uploaded_file
+
+    def clean(self):
+        cleaned_data = super().clean()
+        account_type = cleaned_data.get("account_type")
+        business_name = cleaned_data.get("business_name")
+        if account_type == User.AccountType.BUSINESS and not business_name:
+            self.add_error("business_name", "Add the registered business name for a business account.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        new_certificate = self.cleaned_data.get("cac_certificate")
+        if new_certificate and self.instance.pk and self.instance.cac_certificate:
+            if self.instance.cac_certificate.name != new_certificate.name:
+                self.instance.cac_certificate.delete(save=False)
+        if instance.account_type != User.AccountType.BUSINESS:
+            instance.business_name = ""
         if commit:
             instance.save()
         return instance
@@ -615,7 +693,7 @@ class AdminUserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("phone_number", "email", "name")
+        fields = ("phone_number", "email", "name", "account_type", "business_name", "social_handle")
 
     def clean_phone_number(self):
         return normalize_phone_number(self.cleaned_data["phone_number"])
@@ -642,7 +720,22 @@ class AdminUserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("phone_number", "email", "name", "password", "is_active", "is_staff", "is_superuser")
+        fields = (
+            "phone_number",
+            "email",
+            "name",
+            "account_type",
+            "business_name",
+            "social_handle",
+            "cac_certificate",
+            "is_phone_verified",
+            "is_email_verified",
+            "is_identity_verified",
+            "password",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+        )
 
     def clean_email(self):
         return normalize_email_address(self.cleaned_data.get("email"))

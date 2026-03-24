@@ -102,6 +102,7 @@ def build_dashboard_context(user):
 
     action_items = _build_action_items(user, open_transactions, pending_offers)
     verification_items, verification_cta = _build_verification_items(user)
+    trust_summary = _build_trust_summary(user, verification_items)
 
     return {
         "using_demo_data": using_demo_data,
@@ -134,6 +135,7 @@ def build_dashboard_context(user):
         "listing_columns": listing_columns,
         "verification_items": verification_items,
         "verification_cta": verification_cta,
+        "trust_summary": trust_summary,
         "open_transactions_total": len(open_transactions),
         "transactions_total": len(open_transactions) + len(closed_transactions),
         "closed_transactions_total": len(closed_transactions),
@@ -306,6 +308,8 @@ def _build_verification_items(user):
     phone_verified = bool(user.phone_number and user.is_phone_verified)
     email_verified = bool(user.email and user.is_email_verified)
     identity_verified = bool(user.is_identity_verified)
+    has_social_handle = bool(user.social_handle_display)
+    has_business_documents = bool(user.account_type == User.AccountType.BUSINESS and user.cac_certificate)
 
     items = [
         {
@@ -313,30 +317,70 @@ def _build_verification_items(user):
             "value": "Verified" if phone_verified else "Pending",
             "tone": "success" if phone_verified else "warning",
             "description": user.phone_number if phone_verified else "Add verification to unlock higher trust.",
+            "needs_action": not phone_verified,
         },
         {
             "label": "Email verified",
             "value": "Verified" if email_verified else "Pending",
             "tone": "success" if email_verified else "neutral",
             "description": user.email if email_verified else "Required for payment receipts and recovery.",
+            "needs_action": not email_verified,
+        },
+        {
+            "label": "Social presence",
+            "value": user.social_handle_display if has_social_handle else "Optional",
+            "tone": "info" if has_social_handle else "neutral",
+            "description": (
+                "Shared social handle improves buyer confidence."
+                if has_social_handle
+                else "Add a public handle buyers can cross-check."
+            ),
+            "needs_action": False,
         },
         {
             "label": "Identity verification",
             "value": "Ready" if identity_verified else "Future-ready",
             "tone": "success" if identity_verified else "neutral",
             "description": "Reserved for higher-trust transactions and dispute handling.",
+            "needs_action": False,
+        },
+        {
+            "label": "Business trust",
+            "value": "CAC on file" if has_business_documents else "Optional",
+            "tone": "success" if has_business_documents else "neutral",
+            "description": (
+                "Business documentation helps buyers trust larger-ticket inventory."
+                if user.account_type == User.AccountType.BUSINESS
+                else "Available if this account sells as a registered business."
+            ),
+            "needs_action": user.account_type == User.AccountType.BUSINESS and not has_business_documents,
         },
     ]
 
-    incomplete = [item for item in items[:2] if item["value"] != "Verified"]
+    incomplete = [item for item in items if item.get("needs_action")]
     verification_cta = None
     if incomplete:
         verification_cta = {
-            "label": "Complete verification to increase trust",
-            "href": reverse("dashboard_profile"),
+            "label": "Open compliance hub",
+            "href": reverse("dashboard_compliance"),
         }
 
     return items, verification_cta
+
+
+def _build_trust_summary(user, verification_items):
+    success_count = len([item for item in verification_items if item["tone"] == "success"])
+    return {
+        "score": user.trust_score,
+        "level_label": user.trust_level_label,
+        "tone": user.trust_tone,
+        "verified_count": success_count,
+        "summary": (
+            "Buyers can already see strong trust signals on this seller profile."
+            if user.trust_score >= 80
+            else "Complete a few more trust signals so payment decisions feel easier and faster."
+        ),
+    }
 
 
 def _transaction_primary_action(transaction, role):

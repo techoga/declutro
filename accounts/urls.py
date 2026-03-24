@@ -41,5 +41,6 @@ urlpatterns = [
         name="dashboard_listing_deactivate",
     ),
     path("dashboard/profile/", views.profile_view, name="dashboard_profile"),
+    path("dashboard/compliance/", views.compliance_view, name="dashboard_compliance"),
     path("dashboard/update-password/", views.update_password_view, name="dashboard_update_password"),
 ]

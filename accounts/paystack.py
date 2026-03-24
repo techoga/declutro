@@ -63,17 +63,22 @@ def amount_to_kobo(amount):
 
 
 def initialize_paystack_payment(*, amount, email, reference, callback_url, metadata):
+    payload = {
+        "amount": amount_to_kobo(amount),
+        "email": email,
+        "reference": reference,
+        "callback_url": callback_url,
+        "metadata": metadata,
+        "currency": getattr(settings, "PAYSTACK_CURRENCY", "NGN"),
+    }
+    channels = list(getattr(settings, "PAYSTACK_CHANNELS", []) or [])
+    if channels:
+        payload["channels"] = channels
+
     return _paystack_request(
         "/transaction/initialize",
         method="POST",
-        payload={
-            "amount": amount_to_kobo(amount),
-            "email": email,
-            "reference": reference,
-            "callback_url": callback_url,
-            "metadata": metadata,
-            "currency": "NGN",
-        },
+        payload=payload,
     )
 
 

@@ -3,6 +3,7 @@ import hmac
 import json
 from datetime import datetime, timezone
 from urllib import error, parse, request
+from urllib.parse import urlparse
 
 from django.conf import settings
 
@@ -21,12 +22,18 @@ class SESEmailService:
         region=None,
         from_email=None,
         session_token=None,
+        endpoint_url=None,
+        reply_to_email=None,
+        configuration_set=None,
     ):
-        self.access_key = access_key or settings.AWS_ACCESS_KEY_ID
-        self.secret_key = secret_key or settings.AWS_SECRET_ACCESS_KEY
-        self.session_token = session_token or settings.AWS_SESSION_TOKEN
-        self.region = region or settings.AWS_REGION
+        self.access_key = access_key or settings.AWS_SES_ACCESS_KEY_ID or settings.AWS_ACCESS_KEY_ID
+        self.secret_key = secret_key or settings.AWS_SES_SECRET_ACCESS_KEY or settings.AWS_SECRET_ACCESS_KEY
+        self.session_token = session_token or settings.AWS_SES_SESSION_TOKEN or settings.AWS_SESSION_TOKEN
+        self.region = region or settings.AWS_SES_REGION or settings.AWS_REGION
         self.from_email = from_email or settings.AWS_SES_FROM_EMAIL
+        self.endpoint_url = endpoint_url or settings.AWS_SES_ENDPOINT_URL
+        self.reply_to_email = reply_to_email or settings.AWS_SES_REPLY_TO_EMAIL
+        self.configuration_set = configuration_set or settings.AWS_SES_CONFIGURATION_SET
 
     def send_password_reset(self, to_email, reset_url):
         self._assert_configured()
@@ -37,15 +44,16 @@ class SESEmailService:
             "If you did not request this, you can ignore this message."
         )
         payload = parse.urlencode(self.build_send_email_params(to_email, subject, body_text)).encode("utf-8")
+        host, path = self._resolve_endpoint()
         self._signed_post(
-            host=f"email.{self.region}.amazonaws.com",
-            path="/",
+            host=host,
+            path=path,
             payload=payload,
             content_type="application/x-www-form-urlencoded; charset=utf-8",
         )
 
     def build_send_email_params(self, to_email, subject, body_text):
-        return {
+        params = {
             "Action": "SendEmail",
             "Version": "2010-12-01",
             "Source": self.from_email,
@@ -53,10 +61,23 @@ class SESEmailService:
             "Message.Subject.Data": subject,
             "Message.Body.Text.Data": body_text,
         }
+        if self.reply_to_email:
+            params["ReplyToAddresses.member.1"] = self.reply_to_email
+        if self.configuration_set:
+            params["ConfigurationSetName"] = self.configuration_set
+        return params
 
     def _assert_configured(self):
         if not all([self.access_key, self.secret_key, self.region, self.from_email]):
             raise NotificationError("AWS SES is not fully configured.")
+
+    def _resolve_endpoint(self):
+        if self.endpoint_url:
+            parsed = urlparse(self.endpoint_url)
+            host = parsed.netloc or parsed.path
+            path = parsed.path or "/"
+            return host, path
+        return f"email.{self.region}.amazonaws.com", "/"
 
     def _signed_post(self, host, path, payload, content_type):
         method = "POST"
